@@ -1,0 +1,14 @@
+{
+  "name": "food-share-frontend",
+  "version": "1.0.0",
+  "description": "Food Share Web Application - Frontend",
+  "private": true,
+  "scripts": {
+    "dev": "set NODE_ENV=development && open http://localhost:3000",
+    "build": "echo 'Frontend is static HTML/CSS/JS'",
+    "start": "open http://localhost:3000"
+  },
+  "keywords": ["food-share", "web", "frontend"],
+  "author": "",
+  "license": "ISC"
+}

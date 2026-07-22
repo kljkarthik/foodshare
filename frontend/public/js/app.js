@@ -5,6 +5,11 @@
 
 const API_BASE = '/api';
 
+// Globals for advanced features
+let mapInstance = null;
+let markerLayerGroup = null;
+let csrChartInstance = null;
+
 // --- APPLICATION STATE ---
 let state = {
   currentUser: null,     // { id, username, email, role, phone }
@@ -229,6 +234,31 @@ function setupEventListeners() {
   document.getElementById('create-listing-form').addEventListener('submit', handleCreateListing);
   document.getElementById('claim-verification-form').addEventListener('submit', handleConfirmClaimCode);
 
+  const ratingForm = document.getElementById('rating-form');
+  if (ratingForm) {
+    ratingForm.addEventListener('submit', handleRatingSubmit);
+  }
+  document.getElementById('modal-close-rating-btn').addEventListener('click', () => {
+    document.getElementById('rating-modal').close();
+  });
+
+  const ngoVerifyForm = document.getElementById('ngo-verify-form');
+  if (ngoVerifyForm) {
+    ngoVerifyForm.addEventListener('submit', handleNgoVerifySubmit);
+  }
+
+  const certModal = document.getElementById('certificate-modal');
+  const closeCertBtn = document.getElementById('modal-close-cert-btn');
+  if (closeCertBtn && certModal) {
+    closeCertBtn.addEventListener('click', () => certModal.close());
+  }
+  
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'btn-export-certificate') {
+      openCertificateModal();
+    }
+  });
+
   // Search Input Debouncing
   let searchTimeout;
   document.getElementById('filter-search').addEventListener('input', (e) => {
@@ -397,6 +427,8 @@ async function handleCreateListing(e) {
   const quantity = document.getElementById('listing-quantity').value;
   const expiry_time = new Date(document.getElementById('listing-expiry').value).toISOString();
   const pickup_location = document.getElementById('listing-location').value;
+  const latitude = document.getElementById('listing-latitude').value;
+  const longitude = document.getElementById('listing-longitude').value;
   const pickup_start = new Date(document.getElementById('listing-pickup-start').value).toISOString();
   const pickup_end = new Date(document.getElementById('listing-pickup-end').value).toISOString();
   const description = document.getElementById('listing-description').value;
@@ -424,7 +456,7 @@ async function handleCreateListing(e) {
     await fetchWithAuth('/listings', {
       method: 'POST',
       body: JSON.stringify({
-        title, description, quantity, pickup_location, pickup_start, pickup_end, expiry_time, dietary_tags, image_url, food_category
+        title, description, quantity, pickup_location, pickup_start, pickup_end, expiry_time, dietary_tags, image_url, food_category, latitude, longitude
       })
     });
 
@@ -447,7 +479,7 @@ async function handleCreateListing(e) {
 
 // --- DATA RETRIEVAL & RENDERING ---
 
-// Retrieve food listings for Browse Feed
+// // Retrieve food listings for Browse Feed
 async function loadListings() {
   const grid = document.getElementById('listings-grid');
   grid.innerHTML = '<div class="loading-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Filtering fresh meals...</div>';
@@ -461,14 +493,14 @@ async function loadListings() {
     if (state.filters.search) {
       url += `&search=${encodeURIComponent(state.filters.search)}`;
     }
-    if (state.filters.tags.size > 0) {
-      const tagString = Array.from(state.filters.tags).join(',');
-      url += `&tags=${encodeURIComponent(tagString)}`;
-    }
 
     const data = await fetchWithAuth(url);
     state.listings = data;
     renderListings(data);
+
+    // Initialize Leaflet map and draw markers
+    initializeMap();
+    updateMapMarkers(data);
   } catch (err) {
     grid.innerHTML = `<div class="empty-state">Error fetching listings: ${err.message}</div>`;
   }
@@ -515,7 +547,7 @@ function renderListings(listings) {
       if (!state.currentUser) {
         cardActionBtn = `<button class="btn btn-primary btn-sm" onclick="showSection('auth'); switchToSignupTab('receiver');"><i class="fa-solid fa-bookmark"></i> Book Now</button>`;
       } else if (state.currentUser.role === 'receiver') {
-        cardActionBtn = `<button class="btn btn-primary btn-sm" onclick="reserveFood(${l.id})"><i class="fa-solid fa-bookmark"></i> Book Now</button>`;
+        cardActionBtn = `<button class="btn btn-primary btn-sm" onclick="reserveFood('${l.id}')"><i class="fa-solid fa-bookmark"></i> Book Now</button>`;
       } else if (state.currentUser.role === 'donor' && isOwner) {
         cardActionBtn = `<span style="font-size: 0.8rem; color: var(--primary); font-weight: 700;"><i class="fa-solid fa-circle-user"></i> Mine</span>`;
       }
@@ -546,7 +578,7 @@ function renderListings(listings) {
         <div class="listing-footer">
           <span class="listing-qty"><i class="fa-solid fa-cubes"></i> ${escapeHTML(l.quantity)}</span>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button class="btn btn-secondary btn-sm" onclick="openListingDetail(${l.id})">Details</button>
+            <button class="btn btn-secondary btn-sm" onclick="openListingDetail('${l.id}')">Details</button>
             ${cardActionBtn}
           </div>
         </div>
@@ -670,9 +702,6 @@ async function loadDonorDashboard() {
 
   try {
     // 1. Fetch donor's own listings
-    // Querying all listings where status is anything, filter by owner can be done on backend or server filter:
-    // In our backend, we get listings. Filter client side or fetch a specific endpoint. 
-    // In routes.js: GET /listings with status=all shows all. Let's filter client-side for donor listings:
     const allListings = await fetchWithAuth('/listings?status=all');
     const donorListings = allListings.filter(l => l.donor_id === state.currentUser.id);
 
@@ -686,8 +715,8 @@ async function loadDonorDashboard() {
             <p>Qty: ${escapeHTML(l.quantity)} | Status: <span class="status-${l.status}">${l.status}</span></p>
           </div>
           <div class="dashboard-item-actions">
-            <button class="btn btn-secondary btn-sm" onclick="openListingDetail(${l.id})">View</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id})"><i class="fa-solid fa-trash-can"></i></button>
+            <button class="btn btn-secondary btn-sm" onclick="openListingDetail('${l.id}')">View</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteListing('${l.id}')"><i class="fa-solid fa-trash-can"></i></button>
           </div>
         </div>
       `).join('');
@@ -708,10 +737,21 @@ async function loadDonorDashboard() {
             <p>Contact: ${escapeHTML(r.receiver_phone || r.receiver_email)}</p>
           </div>
           <div class="dashboard-item-actions">
-            <button class="btn btn-primary btn-sm" onclick="openClaimVerification(${r.listing_id})">Claim</button>
+            <button class="btn btn-primary btn-sm" onclick="openClaimVerification('${r.listing_id}')">Claim</button>
           </div>
         </div>
       `).join('');
+    }
+
+    // 3. Fetch CSR statistics and draw chart
+    try {
+      const stats = await fetchWithAuth('/listings/stats');
+      document.getElementById('donor-stats-meals').innerText = stats.meals;
+      document.getElementById('donor-stats-water').innerText = stats.water.toLocaleString();
+      document.getElementById('donor-stats-co2').innerText = stats.co2;
+      renderCsrChart(stats.monthlyData);
+    } catch (statsErr) {
+      console.warn('Failed to load CSR stats:', statsErr);
     }
   } catch (err) {
     listingsList.innerHTML = `<p class="empty-state">Error: ${err.message}</p>`;
@@ -778,8 +818,57 @@ async function loadReceiverReservations() {
   grid.innerHTML = '<div class="loading-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Retrieving your claims...</div>';
 
   try {
+    // Load XP and verification document status
+    try {
+      const profile = await fetchWithAuth('/auth/me');
+      if (profile && profile.xp_points !== undefined) {
+        document.getElementById('user-xp-display').innerText = profile.xp_points;
+      }
+      
+      const statusDiv = document.getElementById('ngo-verification-status');
+      if (profile && profile.verification_doc && statusDiv) {
+        statusDiv.innerText = "Status: Pending Review (Doc: " + profile.verification_doc + ")";
+        statusDiv.style.color = "var(--primary)";
+        const verifyForm = document.getElementById('ngo-verify-form');
+        if (verifyForm) verifyForm.style.display = 'none';
+      }
+    } catch (xpErr) {
+      console.warn('XP and verification status fetch skipped:', xpErr);
+    }
+
     const reservations = await fetchWithAuth('/reservations/my');
     
+    // Load leaderboard list
+    try {
+      const leaderboard = await fetchWithAuth('/users/leaderboard');
+      const leaderboardList = document.getElementById('leaderboard-list');
+      if (leaderboardList) {
+        if (leaderboard.length === 0) {
+          leaderboardList.innerHTML = '<p class="empty-state">No rescuers ranked yet.</p>';
+        } else {
+          leaderboardList.innerHTML = leaderboard.map((u, index) => {
+            let medal = '';
+            if (index === 0) medal = '🥇';
+            else if (index === 1) medal = '🥈';
+            else if (index === 2) medal = '🥉';
+            else medal = `<strong>#${index + 1}</strong>`;
+
+            return `
+              <div class="dashboard-item-row" style="padding: 10px; margin-bottom: 0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 1.1rem;">${medal}</span>
+                  <strong style="font-size: 0.85rem;">${escapeHTML(u.username)}</strong>
+                </div>
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary);">${u.xp_points} XP</span>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    } catch (leaderboardErr) {
+      console.warn('Failed to load leaderboard:', leaderboardErr);
+    }
+
     if (reservations.length === 0) {
       grid.innerHTML = `
         <div class="empty-state-container">
@@ -811,15 +900,26 @@ async function loadReceiverReservations() {
             <p><strong>Phone:</strong> ${escapeHTML(r.donor_phone || 'No phone')}</p>
             <p><strong>Location:</strong> ${escapeHTML(r.pickup_location)}</p>
           </div>
-          <button class="btn btn-danger btn-full margin-top" onclick="releaseReservation(${r.listing_id})">Cancel Reservation</button>
+          <button class="btn btn-danger btn-full margin-top" onclick="releaseReservation('${r.listing_id}')">Cancel Reservation</button>
         `;
       } else {
         cardStyle = 'border-top: 4px solid var(--border); opacity: 0.8;';
+        
+        let ratingBtnHtml = '';
+        if (isCompleted) {
+          if (r.rating) {
+            ratingBtnHtml = `<div style="margin-top: 10px; font-weight: bold; color: var(--accent); text-align: center;">Feedback: ${'⭐'.repeat(r.rating)}</div>`;
+          } else {
+            ratingBtnHtml = `<button class="btn btn-secondary btn-sm margin-top btn-full" onclick="openRatingModal('${r.id}')"><i class="fa-solid fa-star"></i> Rate Pickup</button>`;
+          }
+        }
+
         footerHtml = `
-          <div style="text-align:center; padding: 20px 0; font-weight:700; color: ${isCompleted ? 'var(--success)' : 'var(--error)'}">
+          <div style="text-align:center; padding: 20px 0 10px; font-weight:700; color: ${isCompleted ? 'var(--success)' : 'var(--error)'}">
             <i class="fa-solid ${isCompleted ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> 
             Reservation ${r.status}
           </div>
+          ${ratingBtnHtml}
         `;
       }
 
@@ -993,8 +1093,6 @@ function setupExtraFeatures() {
       const meals = parseInt(calcSlider.value);
       calcMealsVal.textContent = meals;
       
-      // 1 meal saved = ~300 gallons of water saved (average agricultural estimate)
-      // 1 meal saved = ~2.5 lbs of greenhouse gases / CO2 avoided (EPA estimate)
       const waterSaved = meals * 300;
       const co2Saved = meals * 2.5;
 
@@ -1003,7 +1101,192 @@ function setupExtraFeatures() {
     };
 
     calcSlider.addEventListener('input', updateCalculator);
-    // Initialize calculator results
     updateCalculator();
+  }
+}
+
+// --- ADVANCED FEATURES CONTROLLER FUNCTIONS ---
+
+// Leaflet Map Initialization
+function initializeMap() {
+  const mapContainer = document.getElementById('map-view');
+  if (!mapContainer) return;
+
+  if (!mapInstance) {
+    // Default to Mumbai Center, India
+    mapInstance = L.map('map-view').setView([19.0760, 72.8777], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(mapInstance);
+    markerLayerGroup = L.layerGroup().addTo(mapInstance);
+  } else {
+    // Invalidate size in case display toggled
+    setTimeout(() => { mapInstance.invalidateSize(); }, 150);
+  }
+}
+
+// Plot listing coordinates on map view
+function updateMapMarkers(listings) {
+  if (!mapInstance || !markerLayerGroup) return;
+  markerLayerGroup.clearLayers();
+
+  const coordinates = [];
+
+  listings.forEach(l => {
+    const lat = l.latitude || 19.0760;
+    const lng = l.longitude || 72.8777;
+
+    const marker = L.marker([lat, lng]);
+    const popupContent = `
+      <div style="font-family: var(--font-sans); width: 140px; padding: 4px;">
+        <h4 style="font-weight:800; font-size:0.85rem; margin-bottom: 2px; color: var(--dark);">${escapeHTML(l.title)}</h4>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-bottom: 6px;">Qty: ${escapeHTML(l.quantity)}</p>
+        <button class="btn btn-primary btn-sm" onclick="openListingDetail('${l.id}')" style="padding: 4px; font-size:0.65rem; width:100%; border-radius: var(--radius-sm);">View Details</button>
+      </div>
+    `;
+    
+    marker.bindPopup(popupContent);
+    marker.addTo(markerLayerGroup);
+    coordinates.push([lat, lng]);
+  });
+
+  if (coordinates.length > 0) {
+    const bounds = L.latLngBounds(coordinates);
+    mapInstance.fitBounds(bounds, { padding: [40, 40] });
+  }
+}
+
+// Render CSR Environmental statistics bar chart
+function renderCsrChart(monthlyData) {
+  const ctx = document.getElementById('donor-csr-chart');
+  if (!ctx) return;
+
+  const monthsName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const labels = [];
+  const dataValues = [];
+
+  // Populate chart with trailing 6 months dataset
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const mCode = String(d.getMonth() + 1).padStart(2, '0');
+    labels.push(monthsName[d.getMonth()]);
+    
+    const record = monthlyData.find(r => r.month === mCode);
+    dataValues.push(record ? record.count : 0);
+  }
+
+  if (csrChartInstance) {
+    csrChartInstance.destroy();
+  }
+
+  csrChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Meals Shared',
+        data: dataValues,
+        backgroundColor: '#2a6f43',
+        borderRadius: 4,
+        barThickness: 16
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// Open Star Rating modal dialog
+function openRatingModal(reservationId) {
+  document.getElementById('rating-reservation-id').value = reservationId;
+  document.getElementById('rating-select').value = "5";
+  document.getElementById('rating-review').value = "";
+  document.getElementById('rating-modal').showModal();
+}
+
+// Submit star rating feedback
+async function handleRatingSubmit(e) {
+  e.preventDefault();
+  const id = document.getElementById('rating-reservation-id').value;
+  const rating = document.getElementById('rating-select').value;
+  const review = document.getElementById('rating-review').value;
+
+  try {
+    await fetchWithAuth(`/reservations/${id}/rate`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, review })
+    });
+    showToast('Star feedback submitted successfully. Thank you!', 'success');
+    document.getElementById('rating-modal').close();
+    loadReceiverReservations();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Submit NGO verification document upload
+async function handleNgoVerifySubmit(e) {
+  e.preventDefault();
+  const fileInput = document.getElementById('ngo-doc-file');
+  const statusDiv = document.getElementById('ngo-verification-status');
+  
+  if (!fileInput || fileInput.files.length === 0) return;
+
+  statusDiv.innerText = "Submitting documentation...";
+  statusDiv.style.color = "var(--accent)";
+
+  try {
+    const filename = fileInput.files[0].name;
+    await fetchWithAuth('/users/verify-doc', {
+      method: 'POST',
+      body: JSON.stringify({ verificationDoc: filename })
+    });
+
+    statusDiv.innerText = "Status: Pending Review (Doc: " + filename + ")";
+    statusDiv.style.color = "var(--primary)";
+    const verifyForm = document.getElementById('ngo-verify-form');
+    if (verifyForm) verifyForm.style.display = 'none';
+
+    showToast('NGO Verification document submitted successfully!', 'success');
+  } catch (err) {
+    statusDiv.innerText = "Error: " + err.message;
+    statusDiv.style.color = "var(--error)";
+    showToast(err.message, 'error');
+  }
+}
+
+// Open Certificate Print Modal
+async function openCertificateModal() {
+  const certModal = document.getElementById('certificate-modal');
+  if (!certModal) return;
+
+  try {
+    const stats = await fetchWithAuth('/listings/stats');
+    const profile = await fetchWithAuth('/auth/me');
+
+    document.getElementById('cert-donor-name').innerText = profile.username;
+    document.getElementById('cert-meals').innerText = stats.meals;
+    document.getElementById('cert-water').innerText = stats.water.toLocaleString();
+    document.getElementById('cert-co2').innerText = stats.co2;
+
+    certModal.showModal();
+  } catch (err) {
+    showToast('Failed to load certificate stats: ' + err.message, 'error');
   }
 }

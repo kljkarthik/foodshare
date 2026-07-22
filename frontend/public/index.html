@@ -13,6 +13,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Leaflet Maps CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -280,6 +285,9 @@
         </div>
       </div>
 
+      <!-- Leaflet Map Container -->
+      <div id="map-view" style="height: 350px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 24px; box-shadow: var(--shadow-sm); z-index: 10;"></div>
+
       <!-- Feed Grid -->
       <div class="listings-grid" id="listings-grid">
         <!-- JS Injected Listing Cards -->
@@ -335,6 +343,17 @@
 
             <div class="form-row">
               <div class="form-group">
+                <label for="listing-latitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Latitude (optional)</label>
+                <input type="number" step="any" id="listing-latitude" placeholder="e.g. 42.3601" value="42.3601">
+              </div>
+              <div class="form-group">
+                <label for="listing-longitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Longitude (optional)</label>
+                <input type="number" step="any" id="listing-longitude" placeholder="e.g. -71.0589" value="-71.0589">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
                 <label for="listing-pickup-start">Pickup Window Start</label>
                 <input type="datetime-local" id="listing-pickup-start" required>
               </div>
@@ -385,6 +404,36 @@
 
         <!-- Right Side: Active Listings and Claims -->
         <div class="dashboard-panel">
+          <!-- CSR Impact Dashboard Card -->
+          <div class="dashboard-card" style="margin-bottom: 20px;">
+            <h2 class="card-title"><i class="fa-solid fa-chart-line icon-accent"></i> My CSR Environmental Stats</h2>
+            <p class="card-subtitle">Track carbon footprint savings and meals distributed.</p>
+            <div class="calc-results" style="margin-bottom: 20px; grid-template-columns: repeat(3, 1fr); gap: 10px; display: grid;">
+              <div class="calc-result-item" style="padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; justify-content: center; height: 60px;">
+                <div>
+                  <span id="donor-stats-meals" style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">0</span>
+                  <p style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase;">Meals Saved</p>
+                </div>
+              </div>
+              <div class="calc-result-item" style="padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; justify-content: center; height: 60px;">
+                <div>
+                  <span id="donor-stats-water" style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">0</span>
+                  <p style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase;">Gal Water</p>
+                </div>
+              </div>
+              <div class="calc-result-item" style="padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; justify-content: center; height: 60px;">
+                <div>
+                  <span id="donor-stats-co2" style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">0</span>
+                  <p style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase;">Lbs CO2</p>
+                </div>
+              </div>
+            </div>
+            <div style="height: 180px; position: relative;">
+              <canvas id="donor-csr-chart" style="width: 100%; height: 100%;"></canvas>
+            </div>
+            <button class="btn btn-secondary btn-sm btn-full" id="btn-export-certificate" style="margin-top: 12px;"><i class="fa-solid fa-award"></i> Generate Green Partner Certificate</button>
+          </div>
+
           <div class="dashboard-card">
             <h2 class="card-title"><i class="fa-solid fa-list-check icon-accent"></i> My Active Listings</h2>
             <p class="card-subtitle">Manage listings you have shared.</p>
@@ -411,16 +460,120 @@
       <h2 class="section-title">My Claims & Reservations</h2>
       <p class="section-subtitle">Present the reservation code to the donor during the pickup window.</p>
       
-      <div class="receiver-reservations-grid" id="receiver-reservations-grid">
-        <!-- JS Injected active reservations -->
-        <div class="empty-state-container">
-          <i class="fa-solid fa-utensils empty-state-icon"></i>
-          <p>You have no active food reservations.</p>
-          <button class="btn btn-primary" onclick="showSection('browse')">Browse Available Food</button>
+      <div class="dashboard-grid" style="margin-top: 24px;">
+        <!-- Left Column: Active Reservations -->
+        <div class="receiver-reservations-grid" id="receiver-reservations-grid">
+          <div class="empty-state-container">
+            <i class="fa-solid fa-utensils empty-state-icon"></i>
+            <p>You have no active food reservations.</p>
+            <button class="btn btn-primary" onclick="showSection('browse')">Browse Available Food</button>
+          </div>
+        </div>
+
+        <!-- Right Column: Rank XP and NGO Verification -->
+        <div class="dashboard-panel">
+          <div class="dashboard-card">
+            <h2 class="card-title"><i class="fa-solid fa-award icon-accent"></i> Rescuer Rank & XP</h2>
+            <p class="card-subtitle">Earn 50 XP for every surplus meal claim completed.</p>
+            <div class="volunteer-xp-card" style="background-color: var(--primary-light); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-md); text-align: center; margin-top: 12px;">
+              <h5 style="margin-bottom: 4px; font-size: 0.8rem; text-transform: uppercase; color: var(--primary); letter-spacing: 0.05em;"><i class="fa-solid fa-trophy"></i> Total XP</h5>
+              <p style="font-size: 1.5rem; font-weight: 800; color: var(--dark);"><span id="user-xp-display">0</span> XP</p>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-trophy icon-accent"></i> Rescuer Leaderboard</h2>
+            <p class="card-subtitle">Top local food rescuers by XP.</p>
+            <div id="leaderboard-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <!-- JS Injected leaderboard rows -->
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top" id="ngo-verification-panel">
+            <h2 class="card-title"><i class="fa-solid fa-shield-halved icon-accent"></i> NGO Verification</h2>
+            <p class="card-subtitle">Verify status to unlock wholesale food claims.</p>
+            <form id="ngo-verify-form" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="ngo-doc-file" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Select Tax-Exempt Document</label>
+                <input type="file" id="ngo-doc-file" accept=".pdf,.doc,.docx,image/*" required style="font-size: 0.8rem; border: 1px solid var(--border); width: 100%; padding: 8px; border-radius: var(--radius-sm); background-color: var(--surface);">
+              </div>
+              <button type="submit" class="btn btn-secondary btn-full">Submit Verification</button>
+            </form>
+            <div id="ngo-verification-status" style="margin-top: 10px; font-size: 0.8rem; font-weight: 700; color: var(--primary);"></div>
+          </div>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- RATING & REVIEW DIALOG MODAL -->
+  <dialog class="modal" id="rating-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Rate Your Food Pickup</h3>
+        <button class="modal-close" id="modal-close-rating-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="rating-form">
+          <input type="hidden" id="rating-reservation-id">
+          <p style="font-size: 0.85rem; color: var(--text-muted);">How was the quality and pickup coordination of this food share?</p>
+          <div class="form-group margin-top">
+            <label for="rating-select" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Select Rating</label>
+            <select id="rating-select" class="filter-select" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px;">
+              <option value="5">⭐⭐⭐⭐⭐ (5 Stars - Excellent)</option>
+              <option value="4">⭐⭐⭐⭐ (4 Stars - Very Good)</option>
+              <option value="3">⭐⭐⭐ (3 Stars - Good)</option>
+              <option value="2">⭐⭐ (2 Stars - Poor)</option>
+              <option value="1">⭐ (1 Star - Bad / Unsafe)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rating-review" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Review / Comments</label>
+            <textarea id="rating-review" rows="3" placeholder="Provide any comments about packaging, freshness, or coordination..." style="border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; padding: 10px; outline: none;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full margin-top">Submit Feedback</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- CSR CERTIFICATE DIALOG MODAL -->
+  <dialog class="modal" id="certificate-modal">
+    <div class="modal-content" style="max-width: 600px; padding: 40px; border: 8px double var(--primary); text-align: center; background-color: var(--surface);">
+      <div style="text-align: right; margin-top: -20px;">
+        <button class="modal-close" id="modal-close-cert-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <h1 style="font-family: 'Outfit', sans-serif; color: var(--primary); font-size: 2.2rem; margin-bottom: 5px;">GREEN PARTNER</h1>
+      <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px;">CERTIFICATE OF COMMENDATION</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">This certificate is proudly presented to</p>
+      <h2 id="cert-donor-name" style="font-family: 'Outfit', sans-serif; color: var(--dark); font-size: 1.8rem; margin: 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; display: inline-block;">Taj Food Services</h2>
+      <p style="font-size: 0.95rem; line-height: 1.6; color: var(--dark); margin: 20px 0;">
+        for outstanding commitment to environmental sustainability and community care. 
+        Through the **Food Share** initiative, they have actively prevented food waste and fed families in need.
+      </p>
+      <div class="calc-results" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 25px 0;">
+        <div style="border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm);">
+          <span id="cert-meals" style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">0</span>
+          <p style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Meals Saved</p>
+        </div>
+        <div style="border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm);">
+          <span id="cert-water" style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">0</span>
+          <p style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Gal Water</p>
+        </div>
+        <div style="border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm);">
+          <span id="cert-co2" style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">0</span>
+          <p style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Lbs CO2 Avoided</p>
+        </div>
+      </div>
+      <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 20px;">
+        <div style="text-align: left;">
+          <p style="font-size: 0.75rem; font-weight: 700; color: var(--dark);">FOOD SHARE PLATFORM</p>
+          <p style="font-size: 0.65rem; color: var(--text-muted);">Verification Seal</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Certificate</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- LISTING DETAILS DIALOG MODAL -->
   <dialog class="modal" id="listing-detail-modal">
@@ -470,11 +623,6 @@
           <li><a href="#" onclick="showSection('browse')">Browse Food</a></li>
           <li><a href="#" onclick="showSection('auth')">Sign In</a></li>
         </ul>
-      </div>
-      <div class="footer-info">
-        <h4>Local Demo Environment</h4>
-        <p><i class="fa-solid fa-database"></i> Database: SQLite (local)</p>
-        <p><i class="fa-solid fa-server"></i> API: Node.js & Express</p>
       </div>
     </div>
     <div class="footer-bottom">

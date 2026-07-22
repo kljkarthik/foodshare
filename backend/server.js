@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { initializeDatabase } = require('./database');
+const { connectDatabase } = require('./database');
 const apiRoutes = require('./routes');
 
 const app = express();
@@ -14,25 +14,25 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Serve static files from the public folder
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from the frontend public folder
+app.use(express.static(path.join(__dirname, '../frontend/public')));
 
 // Mount API routes
 app.use('/api', apiRoutes);
 
 // Fallback to serving public/index.html for client-side SPA routing if any
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/public', 'index.html'));
 });
 
-// Initialize the database then start the server
-initializeDatabase().then(() => {
+// Connect to MongoDB Atlas then start the server
+connectDatabase().then(() => {
   app.listen(PORT, () => {
     console.log(`==================================================`);
     console.log(`Food Share server running on http://localhost:${PORT}`);
     console.log(`==================================================`);
   });
 }).catch(err => {
-  console.error('Failed to initialize database on server startup:', err);
+  console.error('Failed to connect to MongoDB on server startup:', err);
   process.exit(1);
 });
