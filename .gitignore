@@ -1,0 +1,6 @@
+node_modules/
+foodshare.db
+*.db
+add-output.txt
+status-after-add.txt
+*.log

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Food Share - Connecting food donors with receivers to reduce food waste and feed communities.">
+  <title>Food Share | Reduce Food Waste, Connect Communities</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Notification / Banner -->
+  <div class="notification-bar" id="notification-bar">
+    <span class="notification-text" id="notification-text">Welcome to Food Share! Help us make a difference.</span>
+    <button class="notification-close" id="notification-close" aria-label="Close message"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="header">
+    <div class="header-container">
+      <a href="#" class="logo" id="nav-logo">
+        <i class="fa-solid fa-hand-holding-heart logo-icon"></i>
+        <span class="logo-text">Food<span class="logo-accent">Share</span></span>
+      </a>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <nav class="navbar" id="navbar">
+        <ul class="nav-list">
+          <li><a href="#" class="nav-link active" id="nav-home">Home</a></li>
+          <li><a href="#" class="nav-link" id="nav-browse">Browse Food</a></li>
+          <!-- Donor Only Link -->
+          <li class="donor-only hidden"><a href="#" class="nav-link" id="nav-donate">Share Food</a></li>
+          <!-- Receiver Only Link -->
+          <li class="receiver-only hidden"><a href="#" class="nav-link" id="nav-reservations">My Reservations</a></li>
+          <!-- Theme Toggle Button -->
+          <li>
+            <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme">
+              <i class="fa-solid fa-moon"></i>
+            </button>
+          </li>
+          <!-- Guest Links -->
+          <li class="guest-only"><a href="#" class="nav-link btn-login" id="nav-login">Sign In</a></li>
+          <li class="guest-only"><a href="#" class="nav-btn" id="nav-register">Join Now</a></li>
+          <!-- Auth Links -->
+          <li class="auth-only hidden user-profile-dropdown">
+            <span class="user-badge" id="user-badge"><i class="fa-solid fa-user"></i> <span id="user-display-name">Username</span></span>
+          </li>
+          <li class="auth-only hidden"><a href="#" class="nav-link-signout" id="nav-logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- LANDING HERO SECTION -->
+    <section id="landing-hero" class="hero-section">
+      <div class="hero-container">
+        <div class="hero-content">
+          <div class="hero-badge"><i class="fa-solid fa-leaf"></i> Join the Zero Waste Movement</div>
+          <h1 class="hero-title">Share Surplus Food. <br>Feed Your Community.</h1>
+          <p class="hero-subtitle">Food Share connects local businesses and individuals who have excess fresh food with neighbors and organizations in need. Simple, direct, and zero waste.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-large" id="hero-btn-browse"><i class="fa-solid fa-magnifying-glass"></i> Find Food Near You</button>
+            <button class="btn btn-secondary btn-large" id="hero-btn-donate"><i class="fa-solid fa-plus"></i> Share Your Leftovers</button>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-item">
+              <span class="stat-number">10K+</span>
+              <span class="stat-label">Pounds Shared</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">5K+</span>
+              <span class="stat-label">Meals Claimed</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">12t</span>
+              <span class="stat-label">CO2 Saved</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Impact Calculator -->
+          <div class="calculator-card">
+            <h4><i class="fa-solid fa-calculator icon-accent"></i> Calculate Your Impact</h4>
+            <p class="calc-text">If you share <span id="calc-meals-val">10</span> meals a week, you save:</p>
+            <div class="calc-slider-wrapper">
+              <input type="range" id="calc-slider" min="1" max="100" value="10" class="calc-slider">
+            </div>
+            <div class="calc-results">
+              <div class="calc-result-item">
+                <i class="fa-solid fa-droplet icon-water"></i>
+                <div>
+                  <span id="calc-water">3,000</span>
+                  <p>Gallons of Water</p>
+                </div>
+              </div>
+              <div class="calc-result-item">
+                <i class="fa-solid fa-leaf icon-co2"></i>
+                <div>
+                  <span id="calc-co2">25</span>
+                  <p>lbs of CO2</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <!-- Premium UI mockup or abstract card stacks -->
+          <div class="card-mockup-stack">
+            <div class="mockup-card card-1">
+              <div class="mockup-header">
+                <span class="tag tag-vegan">Vegan</span>
+                <span class="status status-available">Available</span>
+              </div>
+              <h4>Organic Fruit Basket</h4>
+              <p><i class="fa-solid fa-location-dot"></i> Downtown Green Market</p>
+              <div class="mockup-footer">
+                <span><i class="fa-solid fa-clock"></i> Expires in 2h</span>
+              </div>
+            </div>
+            <div class="mockup-card card-2">
+              <div class="mockup-header">
+                <span class="tag tag-gf">Gluten-Free</span>
+                <span class="status status-reserved">Reserved</span>
+              </div>
+              <h4>Surplus Bakery Muffins</h4>
+              <p><i class="fa-solid fa-location-dot"></i> Baker's Oven</p>
+              <div class="mockup-footer">
+                <span><i class="fa-solid fa-check"></i> Code: FH982A</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTHENTICATION SECTION (Login & Signup) -->
+    <section id="auth-section" class="auth-section container hidden">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login-btn">Login</button>
+          <button class="auth-tab" id="tab-signup-btn">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form">
+          <h2 class="form-title">Welcome Back</h2>
+          <p class="form-subtitle">Login to list food or check active reservations.</p>
+          <div class="form-group">
+            <label for="login-email">Email Address</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" id="login-email" required placeholder="name@example.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+
+        <!-- Signup Form -->
+        <form id="signup-form" class="auth-form hidden">
+          <h2 class="form-title">Create Account</h2>
+          <p class="form-subtitle">Choose your role and help reduce food waste today.</p>
+          
+          <div class="form-group">
+            <label>Select User Role</label>
+            <div class="role-selector">
+              <input type="radio" name="signup-role" value="donor" id="role-donor" checked class="hidden-radio">
+              <label class="role-option active" id="role-donor-label" for="role-donor">
+                <i class="fa-solid fa-hand-holding-heart role-icon"></i>
+                <div class="role-info">
+                  <strong>Food Donor</strong>
+                  <span>Businesses or individuals with excess food</span>
+                </div>
+              </label>
+              
+              <input type="radio" name="signup-role" value="receiver" id="role-receiver" class="hidden-radio">
+              <label class="role-option" id="role-receiver-label" for="role-receiver">
+                <i class="fa-solid fa-utensils role-icon"></i>
+                <div class="role-info">
+                  <strong>Food Receiver</strong>
+                  <span>Individuals, shelters, or community kitchens</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-username">Name / Organization Name</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input type="text" id="signup-username" required placeholder="e.g. Green Bakery or Sarah Doe">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email Address</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" id="signup-email" required placeholder="contact@example.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="signup-phone">Phone Number (Required for pickup coordination)</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-phone input-icon"></i>
+              <input type="tel" id="signup-phone" required placeholder="e.g. +1 555-0199">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="signup-password" required placeholder="Minimum 6 characters">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- BROWSE FEED SECTION (Receiver View) -->
+    <section id="browse-section" class="browse-section container hidden">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Available Food Listings</h2>
+          <p class="section-subtitle">Claim items in your area before they expire.</p>
+        </div>
+        <div class="active-filters-summary" id="active-filters-summary">
+          <!-- JS injected -->
+        </div>
+      </div>
+
+      <!-- Search & Filters Container -->
+      <div class="filters-container">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="filter-search" placeholder="Search by title, location, description...">
+        </div>
+        <div class="filter-actions">
+          <div class="tags-selector" id="tags-selector">
+            <button class="tag-filter-btn" data-tag="Vegan">Vegan</button>
+            <button class="tag-filter-btn" data-tag="Vegetarian">Vegetarian</button>
+            <button class="tag-filter-btn" data-tag="Gluten-Free">Gluten-Free</button>
+            <button class="tag-filter-btn" data-tag="Contains Nuts">Contains Nuts</button>
+          </div>
+          <select id="filter-status" class="filter-select">
+            <option value="available">Status: Available</option>
+            <option value="reserved">Status: Reserved</option>
+            <option value="claimed">Status: Claimed</option>
+            <option value="all">Status: All</option>
+          </select>
+          <select id="filter-category" class="filter-select">
+            <option value="all">All Categories</option>
+            <option value="Cooked Meals">Cooked Meals</option>
+            <option value="Bakery & Bread">Bakery & Bread</option>
+            <option value="Fruits & Vegetables">Fruits & Vegetables</option>
+            <option value="Dairy & Eggs">Dairy & Eggs</option>
+            <option value="Packaged & Canned">Packaged & Canned</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Meat & Seafood">Meat & Seafood</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="btn btn-secondary" id="btn-clear-filters"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+      </div>
+
+      <!-- Feed Grid -->
+      <div class="listings-grid" id="listings-grid">
+        <!-- JS Injected Listing Cards -->
+        <div class="loading-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading food listings...</div>
+      </div>
+    </section>
+
+    <!-- DONOR DASHBOARD SECTION -->
+    <section id="donor-section" class="donor-section container hidden">
+      <div class="dashboard-grid">
+        <!-- Left Side: Create Listing -->
+        <div class="dashboard-card">
+          <h2 class="card-title"><i class="fa-solid fa-circle-plus icon-accent"></i> Create Food Listing</h2>
+          <p class="card-subtitle">List excess food with clear pickup instructions.</p>
+          <form id="create-listing-form">
+            <div class="form-group">
+              <label for="listing-title">Listing Title</label>
+              <input type="text" id="listing-title" required placeholder="e.g. 5x Surplus Vegetable Paninis">
+            </div>
+            
+            <div class="form-group">
+              <label for="listing-category">Food Category</label>
+              <select id="listing-category" style="width: 100%; outline: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; background-color: var(--surface); color: var(--dark); transition: var(--transition);">
+                <option value="Cooked Meals">Cooked Meals</option>
+                <option value="Bakery & Bread">Bakery & Bread</option>
+                <option value="Fruits & Vegetables">Fruits & Vegetables</option>
+                <option value="Dairy & Eggs">Dairy & Eggs</option>
+                <option value="Packaged & Canned">Packaged & Canned</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Meat & Seafood">Meat & Seafood</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="listing-quantity">Quantity</label>
+                <input type="text" id="listing-quantity" required placeholder="e.g. 3 boxes, 2 kg">
+              </div>
+              <div class="form-group">
+                <label for="listing-expiry">Expiry Time</label>
+                <input type="datetime-local" id="listing-expiry" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="listing-location">Pickup Location (Address)</label>
+              <div class="input-icon-wrapper">
+                <i class="fa-solid fa-location-dot input-icon"></i>
+                <input type="text" id="listing-location" required placeholder="e.g. 123 Main St, Bakery Corner">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="listing-pickup-start">Pickup Window Start</label>
+                <input type="datetime-local" id="listing-pickup-start" required>
+              </div>
+              <div class="form-group">
+                <label for="listing-pickup-end">Pickup Window End</label>
+                <input type="datetime-local" id="listing-pickup-end" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="listing-description">Description & Ingredients</label>
+              <textarea id="listing-description" rows="3" placeholder="Provide details like: prepared last night, keep refrigerated, contains wheat/dairy."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Dietary & Allergen Tags</label>
+              <div class="tags-checkbox-grid">
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Vegan"> Vegan
+                </label>
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Vegetarian"> Vegetarian
+                </label>
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Gluten-Free"> Gluten-Free
+                </label>
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Contains Nuts"> Contains Nuts
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="listing-image-file">Upload Food Image (Optional)</label>
+              <div class="input-icon-wrapper">
+                <i class="fa-solid fa-image input-icon"></i>
+                <input type="file" id="listing-image-file" accept="image/*" style="padding-left: 48px;">
+              </div>
+              <div id="image-preview-container" class="image-preview-container hidden">
+                <img id="image-preview" src="" alt="Image preview">
+                <button type="button" id="btn-remove-image" class="btn-remove-image"><i class="fa-solid fa-trash"></i> Remove</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full"><i class="fa-solid fa-check"></i> Post Food Listing</button>
+          </form>
+        </div>
+
+        <!-- Right Side: Active Listings and Claims -->
+        <div class="dashboard-panel">
+          <div class="dashboard-card">
+            <h2 class="card-title"><i class="fa-solid fa-list-check icon-accent"></i> My Active Listings</h2>
+            <p class="card-subtitle">Manage listings you have shared.</p>
+            <div class="donor-listings-list" id="donor-listings-list">
+              <!-- JS Injected listings -->
+              <p class="empty-state">No listings posted yet. Share your first leftovers using the form on the left.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-handshake-angle icon-accent"></i> Incoming Reservations</h2>
+            <p class="card-subtitle">Validate claim codes when receivers arrive for pickup.</p>
+            <div class="donor-reservations-list" id="donor-reservations-list">
+              <!-- JS Injected reservation codes -->
+              <p class="empty-state">No reservations pending. Once a receiver claims your food, they will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECEIVER DASHBOARD SECTION -->
+    <section id="receiver-dashboard" class="receiver-dashboard container hidden">
+      <h2 class="section-title">My Claims & Reservations</h2>
+      <p class="section-subtitle">Present the reservation code to the donor during the pickup window.</p>
+      
+      <div class="receiver-reservations-grid" id="receiver-reservations-grid">
+        <!-- JS Injected active reservations -->
+        <div class="empty-state-container">
+          <i class="fa-solid fa-utensils empty-state-icon"></i>
+          <p>You have no active food reservations.</p>
+          <button class="btn btn-primary" onclick="showSection('browse')">Browse Available Food</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- LISTING DETAILS DIALOG MODAL -->
+  <dialog class="modal" id="listing-detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Listing Details</h3>
+        <button class="modal-close" id="modal-close-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="modal-body-content">
+        <!-- JS Dynamic Content -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- CLAIM VERIFICATION MODAL -->
+  <dialog class="modal" id="claim-verification-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Complete Food Pickup</h3>
+        <button class="modal-close" id="modal-close-claim-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="claim-verification-form">
+          <p>Enter the 6-character Reservation Code to complete this claim and mark the food as picked up.</p>
+          <div class="form-group margin-top">
+            <label for="claim-code-input">6-Digit Code</label>
+            <input type="text" id="claim-code-input" class="claim-code-field" maxlength="6" required placeholder="XXXXXX" autocomplete="off">
+          </div>
+          <input type="hidden" id="claim-listing-id">
+          <button type="submit" class="btn btn-primary btn-full margin-top">Confirm Pickup</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="logo-text"><i class="fa-solid fa-hand-holding-heart"></i> Food<span class="logo-accent">Share</span></span>
+        <p>Connecting surplus food with community hunger. Built for a sustainable future.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="#" onclick="showSection('landing')">Home</a></li>
+          <li><a href="#" onclick="showSection('browse')">Browse Food</a></li>
+          <li><a href="#" onclick="showSection('auth')">Sign In</a></li>
+        </ul>
+      </div>
+      <div class="footer-info">
+        <h4>Local Demo Environment</h4>
+        <p><i class="fa-solid fa-database"></i> Database: SQLite (local)</p>
+        <p><i class="fa-solid fa-server"></i> API: Node.js & Express</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Food Share. Project built using Vanilla Frontend + REST Backend.</p>
+    </div>
+  </footer>
+
+  <!-- Custom JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>
