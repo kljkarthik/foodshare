@@ -1,12 +1,51 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 
 // Node v18 Global Crypto polyfill for modern MongoDB drivers
 if (!global.crypto) {
   global.crypto = require('crypto');
 }
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://kljkarthik:kljkarthik@foodshare.5nr7wjq.mongodb.net/foodshare?retryWrites=true&w=majority&appName=foodshare';
+function loadLocalEnv() {
+  const envPath = path.join(__dirname, '.env');
+
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
+
+  const contents = fs.readFileSync(envPath, 'utf8');
+
+  for (const line of contents.split(/\r?\n/)) {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf('=');
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = trimmed.slice(separatorIndex + 1).trim();
+
+    if (key && !process.env[key]) {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadLocalEnv();
+
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb+srv://kljkarthik:kljkarthik@foodshare.5nr7wjq.mongodb.net/foodshare?retryWrites=true&w=majority&appName=foodshare';
+
+let cached = global.__foodShareMongoCache;
+
+if (!cached) {
+  cached = global.__foodShareMongoCache = {
+    conn: null,
+    promise: null
+  };
+}
 
 // ----------------------------------------------------
 // SCHEMAS & MODELS
@@ -20,6 +59,8 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String },
   verification_doc: { type: String },
   xp_points: { type: Number, default: 0 },
+  rating_sum: { type: Number, default: 0 },
+  rating_count: { type: Number, default: 0 },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -52,9 +93,18 @@ const ReservationSchema = new mongoose.Schema({
   review: { type: String }
 });
 
+const MessageSchema = new mongoose.Schema({
+  listing_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Listing', required: true },
+  sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  sender_name: { type: String, required: true },
+  text: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
+});
+
 const User = mongoose.model('User', UserSchema);
 const Listing = mongoose.model('Listing', ListingSchema);
 const Reservation = mongoose.model('Reservation', ReservationSchema);
+const Message = mongoose.model('Message', MessageSchema);
 
 // Helper function to seed mock data
 async function seedMockData() {
@@ -89,6 +139,14 @@ async function seedMockData() {
         password_hash: hashedPassword,
         role: 'receiver',
         phone: '+91 98765 99999'
+      });
+
+      await User.create({
+        username: 'System Administrator',
+        email: 'admin@example.com',
+        password_hash: hashedPassword,
+        role: 'admin',
+        phone: '+91 98765 88888'
       });
 
       // Seed Listings
@@ -145,6 +203,21 @@ async function seedMockData() {
 
       console.log('Mock data seeded to MongoDB successfully.');
     }
+
+    // Ensure admin user exists
+    const adminExists = await User.findOne({ email: 'admin@example.com' });
+    if (!adminExists) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('password123', salt);
+      await User.create({
+        username: 'System Administrator',
+        email: 'admin@example.com',
+        password_hash: hashedPassword,
+        role: 'admin',
+        phone: '+91 98765 88888'
+      });
+      console.log('Admin user seeded successfully.');
+    }
   } catch (err) {
     console.error('Error seeding data:', err);
   }
@@ -152,13 +225,29 @@ async function seedMockData() {
 
 // Connect Database wrapper
 async function connectDatabase() {
+  if (!MONGO_URI) {
+    throw new Error('MongoDB connection string is missing. Set MONGO_URI or MONGODB_URI.');
+  }
+
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGO_URI).then(async (mongooseInstance) => {
+      console.log('Connected to MongoDB Atlas successfully.');
+      await seedMockData();
+      return mongooseInstance;
+    });
+  }
+
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log('Connected to MongoDB Atlas successfully.');
-    await seedMockData();
+    cached.conn = await cached.promise;
+    return cached.conn;
   } catch (err) {
+    cached.promise = null;
     console.error('MongoDB connection error:', err);
-    process.exit(1);
+    throw err;
   }
 }
 
@@ -166,5 +255,6 @@ module.exports = {
   connectDatabase,
   User,
   Listing,
-  Reservation
+  Reservation,
+  Message
 };

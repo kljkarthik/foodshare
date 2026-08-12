@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const { User, Listing, Reservation } = require('./database');
+const { User, Listing, Reservation, Message } = require('./database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'foodshare-secret-key-2026';
 
@@ -186,7 +186,7 @@ router.get('/listings', async (req, res) => {
   }
 
   try {
-    let listings = await Listing.find(filter).populate('donor_id', 'username phone email');
+    let listings = await Listing.find(filter).populate('donor_id', 'username phone email rating_sum rating_count');
 
     // Apply client-side tag filtering if tags are provided
     if (tags) {
@@ -205,7 +205,9 @@ router.get('/listings', async (req, res) => {
         id: obj._id.toString(),
         donor_name: l.donor_id ? l.donor_id.username : 'Unknown',
         donor_phone: l.donor_id ? l.donor_id.phone : '',
-        donor_email: l.donor_id ? l.donor_id.email : ''
+        donor_email: l.donor_id ? l.donor_id.email : '',
+        donor_rating: l.donor_id && l.donor_id.rating_count > 0 ? (l.donor_id.rating_sum / l.donor_id.rating_count).toFixed(1) : 'New',
+        donor_rating_count: l.donor_id ? l.donor_id.rating_count : 0
       };
     });
 
@@ -291,8 +293,27 @@ router.post('/listings', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'Missing required listing fields.' });
   }
 
-  const lat = latitude ? parseFloat(latitude) : 19.0760;
-  const lng = longitude ? parseFloat(longitude) : 72.8777;
+  let lat = parseFloat(latitude);
+  let lng = parseFloat(longitude);
+  if (isNaN(lat)) lat = 19.0760;
+  if (isNaN(lng)) lng = 72.8777;
+
+  // Fallback server-side geocoding if coordinates are default and pickup_location is provided
+  if ((lat === 19.0760 && lng === 72.8777) && pickup_location) {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup_location)}&limit=1`, {
+        headers: { 'User-Agent': 'FoodShare-App' }
+      });
+      const data = await response.json();
+      if (data && data.length > 0) {
+        lat = parseFloat(data[0].lat);
+        lng = parseFloat(data[0].lon);
+        console.log(`Server-side geocoded "${pickup_location}" to [${lat}, ${lng}]`);
+      }
+    } catch (geocodeErr) {
+      console.warn('Server-side geocoding fallback failed:', geocodeErr);
+    }
+  }
 
   try {
     const newListing = await Listing.create({
@@ -347,8 +368,8 @@ router.put('/listings/:id', authenticateToken, async (req, res) => {
       dietary_tags: dietary_tags !== undefined ? dietary_tags : listing.dietary_tags,
       image_url: image_url !== undefined ? image_url : listing.image_url,
       food_category: food_category || listing.food_category,
-      latitude: latitude ? parseFloat(latitude) : listing.latitude,
-      longitude: longitude ? parseFloat(longitude) : listing.longitude
+      latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : listing.latitude,
+      longitude: longitude && !isNaN(parseFloat(longitude)) ? parseFloat(longitude) : listing.longitude
     });
 
     await listing.save();
@@ -542,7 +563,7 @@ router.get('/reservations/my', authenticateToken, async (req, res) => {
 
       const rawRes = await Reservation.find({ listing_id: { $in: listingIds } })
         .populate('listing_id')
-        .populate('receiver_id', 'username phone email')
+        .populate('receiver_id', 'username phone email verification_doc')
         .sort({ reserved_at: -1 });
 
       reservations = rawRes.map(r => ({
@@ -555,7 +576,8 @@ router.get('/reservations/my', authenticateToken, async (req, res) => {
         expiry_time: r.listing_id ? r.listing_id.expiry_time : '',
         receiver_name: r.receiver_id ? r.receiver_id.username : 'Unknown',
         receiver_phone: r.receiver_id ? r.receiver_id.phone : '',
-        receiver_email: r.receiver_id ? r.receiver_id.email : ''
+        receiver_email: r.receiver_id ? r.receiver_id.email : '',
+        receiver_verified: r.receiver_id ? (r.receiver_id.verification_doc === 'verified') : false
       }));
     }
 
@@ -578,11 +600,31 @@ router.get('/admin/stats', authenticateToken, async (req, res) => {
     const activeReservations = await Reservation.countDocuments({ status: 'active' });
     const completedReservations = await Reservation.countDocuments({ status: 'completed' });
 
+    const donors = await User.countDocuments({ role: 'donor' });
+    const receivers = await User.countDocuments({ role: 'receiver' });
+    const admins = await User.countDocuments({ role: 'admin' });
+
+    const availableListings = await Listing.countDocuments({ status: 'available' });
+    const reservedListings = await Listing.countDocuments({ status: 'reserved' });
+    const claimedListings = await Listing.countDocuments({ status: 'claimed' });
+    const expiredListings = await Listing.countDocuments({ status: 'expired' });
+
     res.json({
       totalUsers: userCount,
       totalListings: listingCount,
       activeReservations: activeReservations,
-      completedClaims: completedReservations
+      completedClaims: completedReservations,
+      roles: {
+        donor: donors,
+        receiver: receivers,
+        admin: admins
+      },
+      listings: {
+        available: availableListings,
+        reserved: reservedListings,
+        claimed: claimedListings,
+        expired: expiredListings
+      }
     });
   } catch (err) {
     console.error('Admin stats error:', err);
@@ -610,6 +652,21 @@ router.post('/reservations/:id/rate', authenticateToken, async (req, res) => {
     reservation.rating = parseInt(rating);
     reservation.review = review || '';
     await reservation.save();
+
+    // Update donor user aggregate rating score for double-blind trust metrics
+    try {
+      const listing = await Listing.findById(reservation.listing_id);
+      if (listing) {
+        const donor = await User.findById(listing.donor_id);
+        if (donor) {
+          donor.rating_sum += parseInt(rating);
+          donor.rating_count += 1;
+          await donor.save();
+        }
+      }
+    } catch (rateErr) {
+      console.warn('Failed to aggregate donor rating on reservation review:', rateErr);
+    }
 
     res.json({ message: 'Feedback submitted successfully. Thank you!' });
   } catch (err) {
@@ -644,6 +701,207 @@ router.get('/users/leaderboard', async (req, res) => {
     res.json(topUsers);
   } catch (err) {
     console.error('Leaderboard query error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// ----------------------------------------------------
+// MESSAGING & CHAT COORDINATION ROUTES
+// ----------------------------------------------------
+
+// Send a new chat message for coordination
+router.post('/messages', authenticateToken, async (req, res) => {
+  const { listingId, text } = req.body;
+  if (!listingId || !text) {
+    return res.status(400).json({ error: 'listingId and text are required.' });
+  }
+
+  try {
+    const message = await Message.create({
+      listing_id: listingId,
+      sender_id: req.user.id,
+      sender_name: req.user.username,
+      text: text.trim()
+    });
+    res.status(201).json(message);
+  } catch (err) {
+    console.error('Send message error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Retrieve message logs for a transaction
+router.get('/messages/:listingId', authenticateToken, async (req, res) => {
+  const { listingId } = req.params;
+  try {
+    const messages = await Message.find({ listing_id: listingId })
+      .sort({ timestamp: 1 });
+    res.json(messages);
+  } catch (err) {
+    console.error('Fetch messages error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// ----------------------------------------------------
+// DOUBLE-BLIND USER RATINGS ROUTES
+// ----------------------------------------------------
+
+// Submit behavior rating for a user (donor/receiver)
+router.post('/users/:id/rate', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { rating } = req.body;
+
+  const score = parseInt(rating);
+  if (isNaN(score) || score < 1 || score > 5) {
+    return res.status(400).json({ error: 'Rating must be an integer between 1 and 5.' });
+  }
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User to rate not found.' });
+    }
+
+    // Increment rating counters in User document
+    user.rating_sum += score;
+    user.rating_count += 1;
+    await user.save();
+
+    res.json({
+      message: 'Rating submitted successfully.',
+      avgRating: (user.rating_sum / user.rating_count).toFixed(1)
+    });
+  } catch (err) {
+    console.error('Rate user error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Middleware to require Admin privileges
+function requireAdmin(req, res, next) {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Access denied. Administrative credentials required.' });
+  }
+}
+
+// ----------------------------------------------------
+// ADMINISTRATIVE CONSOLE CONTROL PANEL ROUTES
+// ----------------------------------------------------
+
+// Retrieve all user profiles
+router.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find().select('-password_hash').sort({ created_at: -1 });
+    res.json(users);
+  } catch (err) {
+    console.error('Fetch admin users error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Admin-forced registration of a new user
+router.post('/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  const { username, email, role, phone, password } = req.body;
+  if (!username || !email || !role || !password) {
+    return res.status(400).json({ error: 'Username, email, role, and password are required.' });
+  }
+
+  try {
+    const existing = await User.findOne({ $or: [{ email: email.toLowerCase() }, { username }] });
+    if (existing) {
+      return res.status(400).json({ error: 'User with this email or username already exists.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({
+      username,
+      email: email.toLowerCase(),
+      role,
+      phone: phone || '',
+      password_hash: hashedPassword
+    });
+
+    res.status(201).json({
+      id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      phone: user.phone
+    });
+  } catch (err) {
+    console.error('Admin create user error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Admin-forced updating of any user details
+router.put('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const { username, email, role, phone } = req.body;
+
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (username) user.username = username;
+    if (email) user.email = email.toLowerCase();
+    if (role) user.role = role;
+    if (phone !== undefined) user.phone = phone;
+
+    await user.save();
+    res.json({
+      id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      phone: user.phone
+    });
+  } catch (err) {
+    console.error('Admin update user error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Admin-forced deletion of a user profile
+router.delete('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json({ message: 'User deleted successfully.' });
+  } catch (err) {
+    console.error('Admin delete user error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Verify/approve/reject receiver documentation
+router.post('/admin/users/:id/verify', authenticateToken, requireAdmin, async (req, res) => {
+  const { approve } = req.body;
+
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User to verify not found.' });
+    }
+
+    if (approve) {
+      user.verification_doc = 'verified'; // Marks verified
+    } else {
+      user.verification_doc = ''; // Reset rejection
+    }
+
+    await user.save();
+    res.json({ message: approve ? 'User verification approved.' : 'User verification rejected.' });
+  } catch (err) {
+    console.error('Verify user document error:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 });

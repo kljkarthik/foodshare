@@ -9,6 +9,11 @@ const API_BASE = '/api';
 let mapInstance = null;
 let markerLayerGroup = null;
 let csrChartInstance = null;
+let pickerMapInstance = null;
+let pickerMarkerInstance = null;
+let pickerLayerGroup = null;
+let routingControlInstance = null;
+let chatPollInterval = null;
 
 // --- APPLICATION STATE ---
 let state = {
@@ -108,6 +113,7 @@ function showSection(sectionId) {
   document.getElementById('browse-section').classList.add('hidden');
   document.getElementById('donor-section').classList.add('hidden');
   document.getElementById('receiver-dashboard').classList.add('hidden');
+  document.getElementById('admin-section').classList.add('hidden');
 
   // Deactivate all navbar links
   document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
@@ -138,6 +144,14 @@ function showSection(sectionId) {
     document.getElementById('receiver-dashboard').classList.remove('hidden');
     document.getElementById('nav-reservations').classList.add('active');
     loadReceiverReservations();
+  } else if (sectionId === 'admin') {
+    if (!state.currentUser || state.currentUser.role !== 'admin') {
+      showSection('auth');
+      return;
+    }
+    document.getElementById('admin-section').classList.remove('hidden');
+    document.getElementById('nav-admin').classList.add('active');
+    loadAdminDashboard();
   }
 
   // Close mobile navigation drawer if open
@@ -149,19 +163,32 @@ function updateNavUI() {
   const authElems = document.querySelectorAll('.auth-only');
   const donorElems = document.querySelectorAll('.donor-only');
   const receiverElems = document.querySelectorAll('.receiver-only');
+  const adminElems = document.querySelectorAll('.admin-only');
 
   if (state.currentUser) {
     // Authenticated
     guestElems.forEach(el => el.classList.add('hidden'));
     authElems.forEach(el => el.classList.remove('hidden'));
-    document.getElementById('user-display-name').textContent = state.currentUser.username;
+    
+    const displaySpan = document.getElementById('user-display-name');
+    if (state.currentUser.role === 'receiver' && state.currentUser.verification_doc === 'verified') {
+      displaySpan.innerHTML = `${escapeHTML(state.currentUser.username)} <i class="fa-solid fa-circle-check" style="color: #4caf50; margin-left: 4px;" title="Verified NGO"></i>`;
+    } else {
+      displaySpan.textContent = state.currentUser.username;
+    }
 
     if (state.currentUser.role === 'donor') {
       donorElems.forEach(el => el.classList.remove('hidden'));
       receiverElems.forEach(el => el.classList.add('hidden'));
+      adminElems.forEach(el => el.classList.add('hidden'));
+    } else if (state.currentUser.role === 'admin') {
+      donorElems.forEach(el => el.classList.add('hidden'));
+      receiverElems.forEach(el => el.classList.add('hidden'));
+      adminElems.forEach(el => el.classList.remove('hidden'));
     } else {
       donorElems.forEach(el => el.classList.add('hidden'));
       receiverElems.forEach(el => el.classList.remove('hidden'));
+      adminElems.forEach(el => el.classList.add('hidden'));
     }
   } else {
     // Guest
@@ -169,6 +196,7 @@ function updateNavUI() {
     authElems.forEach(el => el.classList.add('hidden'));
     donorElems.forEach(el => el.classList.add('hidden'));
     receiverElems.forEach(el => el.classList.add('hidden'));
+    adminElems.forEach(el => el.classList.add('hidden'));
   }
 }
 
@@ -180,6 +208,7 @@ function setupEventListeners() {
   document.getElementById('nav-browse').addEventListener('click', (e) => { e.preventDefault(); showSection('browse'); });
   document.getElementById('nav-donate').addEventListener('click', (e) => { e.preventDefault(); showSection('donor'); });
   document.getElementById('nav-reservations').addEventListener('click', (e) => { e.preventDefault(); showSection('receiver'); });
+  document.getElementById('nav-admin').addEventListener('click', (e) => { e.preventDefault(); showSection('admin'); });
   
   // Hero CTA Buttons
   document.getElementById('hero-btn-browse').addEventListener('click', () => showSection('browse'));
@@ -233,6 +262,7 @@ function setupEventListeners() {
   document.getElementById('signup-form').addEventListener('submit', handleSignup);
   document.getElementById('create-listing-form').addEventListener('submit', handleCreateListing);
   document.getElementById('claim-verification-form').addEventListener('submit', handleConfirmClaimCode);
+  document.getElementById('admin-user-form').addEventListener('submit', handleAdminUserSubmit);
 
   const ratingForm = document.getElementById('rating-form');
   if (ratingForm) {
@@ -259,13 +289,49 @@ function setupEventListeners() {
     }
   });
 
-  // Search Input Debouncing
+  // Attach Live Worldwide Location Autocomplete to Browse Feed Search Bar
+  attachLocationAutocomplete('filter-search', 'filter-search-dropdown', ({ address, lat, lon }) => {
+    state.filters.search = address;
+    loadListings();
+    if (mapInstance) {
+      mapInstance.setView([lat, lon], 14);
+    }
+  });
+
+  // Attach Live Worldwide Location Autocomplete to Donor Pickup Address Form Input
+  attachLocationAutocomplete('listing-location', 'listing-location-dropdown', ({ address, lat, lon }) => {
+    document.getElementById('listing-latitude').value = lat.toFixed(6);
+    document.getElementById('listing-longitude').value = lon.toFixed(6);
+
+    if (pickerMapInstance) {
+      pickerMapInstance.setView([lat, lon], 15);
+      if (pickerMarkerInstance) {
+        pickerMarkerInstance.setLatLng([lat, lon]);
+      }
+      if (pickerLayerGroup) {
+        pickerLayerGroup.clearLayers();
+        const marker = L.marker([lat, lon]);
+        marker.bindPopup(`<div style="font-family: var(--font-sans); width: 180px; padding: 4px;"><strong style="font-size: 0.8rem; color: var(--primary);">Selected Location</strong><p style="font-size: 0.7rem; margin-top: 4px;">${escapeHTML(address)}</p></div>`).openPopup();
+        marker.addTo(pickerLayerGroup);
+      }
+    }
+  });
+
+  // Search Input Debouncing & Map Navigation
   let searchTimeout;
   document.getElementById('filter-search').addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
-    state.filters.search = e.target.value.trim();
-    searchTimeout = setTimeout(loadListings, 300);
+    const query = e.target.value.trim();
+    state.filters.search = query;
+    searchTimeout = setTimeout(() => {
+      loadListings();
+    }, 400);
   });
+
+  const locateMeBtn = document.getElementById('btn-locate-me');
+  if (locateMeBtn) {
+    locateMeBtn.addEventListener('click', handleLocateUser);
+  }
 
   // Status Filter Select
   document.getElementById('filter-status').addEventListener('change', (e) => {
@@ -319,6 +385,24 @@ function setupEventListeners() {
   });
   document.getElementById('modal-close-claim-btn').addEventListener('click', () => {
     document.getElementById('claim-verification-modal').close();
+  });
+  document.getElementById('modal-close-chat-btn').addEventListener('click', () => {
+    document.getElementById('chat-modal').close();
+    if (chatPollInterval) {
+      clearInterval(chatPollInterval);
+      chatPollInterval = null;
+    }
+  });
+
+  document.getElementById('chat-send-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const listingId = document.getElementById('chat-listing-id').value;
+    const input = document.getElementById('chat-message-input');
+    const text = input.value.trim();
+    if (text) {
+      sendChatMessage(listingId, text);
+      input.value = '';
+    }
   });
 }
 
@@ -562,6 +646,9 @@ function renderListings(listings) {
         <div class="listing-body">
           <div class="listing-tags">${tagsHtml}</div>
           <h3 class="listing-title">${escapeHTML(l.title)}</h3>
+          <p style="font-size: 0.75rem; color: #f0a500; margin-bottom: 8px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+            <i class="fa-solid fa-star"></i> <span>${l.donor_rating || 'New'}</span> <span style="color: var(--text-muted); font-weight: 400;">(${l.donor_rating_count || 0} reviews)</span>
+          </p>
           <p class="listing-description">${escapeHTML(l.description || 'No description provided.')}</p>
           
           <div class="listing-meta" style="display: flex; flex-direction: column; gap: 8px;">
@@ -612,11 +699,13 @@ async function openListingDetail(listingId) {
       actionBtnHtml = `<button class="btn btn-primary btn-full" onclick="showSection('auth'); document.getElementById('listing-detail-modal').close();">Log In to Reserve Food</button>`;
     } else if (state.currentUser.role === 'receiver') {
       if (listing.status === 'available' && !isExpired) {
-        actionBtnHtml = `<button class="btn btn-primary btn-full" onclick="reserveFood(${listing.id})"><i class="fa-solid fa-cart-shopping"></i> Reserve This Food</button>`;
+        actionBtnHtml = `<button class="btn btn-primary btn-full" onclick="reserveFood('${listing.id}')"><i class="fa-solid fa-cart-shopping"></i> Reserve This Food</button>`;
       } else if (listing.status === 'reserved') {
         actionBtnHtml = `
-          <div class="notification-bar warning" style="border-radius: var(--radius-sm); margin-bottom:12px;">This listing is currently reserved by a receiver.</div>
-          <button class="btn btn-danger btn-full" onclick="releaseReservation(${listing.id})">Cancel/Release Reservation</button>
+          <div class="notification-bar warning" style="border-radius: var(--radius-sm); margin-bottom:12px;">This listing is currently reserved.</div>
+          <button class="btn btn-primary btn-full" onclick="showDirectionsToPickup(${listing.latitude || 19.0760}, ${listing.longitude || 72.8777})"><i class="fa-solid fa-diamond-turn-right"></i> Get Directions</button>
+          <button class="btn btn-secondary btn-full margin-top" onclick="openListingChat('${listing.id}')"><i class="fa-solid fa-comments"></i> Open Coordination Chat</button>
+          <button class="btn btn-danger btn-full margin-top" onclick="releaseReservation('${listing.id}')">Cancel/Release Reservation</button>
         `;
       } else if (listing.status === 'claimed') {
         actionBtnHtml = `<button class="btn btn-secondary btn-full" disabled>Food Already Claimed</button>`;
@@ -627,11 +716,12 @@ async function openListingDetail(listingId) {
       if (isOwner) {
         if (listing.status === 'reserved') {
           actionBtnHtml = `
-            <button class="btn btn-primary btn-full" onclick="openClaimVerification(${listing.id})"><i class="fa-solid fa-check-double"></i> Validate Claim Code</button>
-            <button class="btn btn-danger btn-full margin-top" onclick="releaseReservation(${listing.id})">Release Reservation (Make Available)</button>
+            <button class="btn btn-primary btn-full" onclick="openClaimVerification('${listing.id}')"><i class="fa-solid fa-check-double"></i> Validate Claim Code</button>
+            <button class="btn btn-secondary btn-full margin-top" onclick="openListingChat('${listing.id}')"><i class="fa-solid fa-comments"></i> Open Coordination Chat</button>
+            <button class="btn btn-danger btn-full margin-top" onclick="releaseReservation('${listing.id}')">Release Reservation (Make Available)</button>
           `;
         } else {
-          actionBtnHtml = `<button class="btn btn-danger btn-full" onclick="deleteListing(${listing.id})"><i class="fa-solid fa-trash-can"></i> Delete Listing</button>`;
+          actionBtnHtml = `<button class="btn btn-danger btn-full" onclick="deleteListing('${listing.id}')"><i class="fa-solid fa-trash-can"></i> Delete Listing</button>`;
         }
       } else {
         actionBtnHtml = `<p class="empty-state">Logged in as a Donor. You cannot reserve food listings.</p>`;
@@ -733,7 +823,7 @@ async function loadDonorDashboard() {
         <div class="dashboard-item-row" style="border-left: 4px solid var(--accent)">
           <div class="dashboard-item-info">
             <h4>${escapeHTML(r.title)}</h4>
-            <p>Reserved by: <strong>${escapeHTML(r.receiver_name)}</strong></p>
+            <p>Reserved by: <strong>${escapeHTML(r.receiver_name)}</strong>${r.receiver_verified ? ' <i class="fa-solid fa-circle-check" style="color: #4caf50;" title="Verified NGO"></i>' : ''}</p>
             <p>Contact: ${escapeHTML(r.receiver_phone || r.receiver_email)}</p>
           </div>
           <div class="dashboard-item-actions">
@@ -753,6 +843,9 @@ async function loadDonorDashboard() {
     } catch (statsErr) {
       console.warn('Failed to load CSR stats:', statsErr);
     }
+
+    // 4. Initialize location picker map
+    initializePickerMap();
   } catch (err) {
     listingsList.innerHTML = `<p class="empty-state">Error: ${err.message}</p>`;
     reservationsList.innerHTML = `<p class="empty-state">Error: ${err.message}</p>`;
@@ -823,14 +916,22 @@ async function loadReceiverReservations() {
       const profile = await fetchWithAuth('/auth/me');
       if (profile && profile.xp_points !== undefined) {
         document.getElementById('user-xp-display').innerText = profile.xp_points;
+        updateBadgesAndLevel(profile.xp_points);
       }
       
       const statusDiv = document.getElementById('ngo-verification-status');
-      if (profile && profile.verification_doc && statusDiv) {
-        statusDiv.innerText = "Status: Pending Review (Doc: " + profile.verification_doc + ")";
-        statusDiv.style.color = "var(--primary)";
+      if (profile && statusDiv) {
         const verifyForm = document.getElementById('ngo-verify-form');
-        if (verifyForm) verifyForm.style.display = 'none';
+        if (profile.verification_doc === 'verified') {
+          statusDiv.innerHTML = 'Status: <span style="color: #4caf50;"><i class="fa-solid fa-circle-check"></i> Verified & Approved</span>';
+          if (verifyForm) verifyForm.style.display = 'none';
+        } else if (profile.verification_doc) {
+          statusDiv.innerHTML = 'Status: <span style="color: #ff9800;"><i class="fa-solid fa-hourglass-half"></i> Under Review (Document Uploaded)</span>';
+          if (verifyForm) verifyForm.style.display = 'none';
+        } else {
+          statusDiv.innerHTML = 'Status: <span style="color: #f44336;"><i class="fa-solid fa-circle-xmark"></i> Not Verified (Submit credentials to get verified)</span>';
+          if (verifyForm) verifyForm.style.display = 'flex';
+        }
       }
     } catch (xpErr) {
       console.warn('XP and verification status fetch skipped:', xpErr);
@@ -1003,6 +1104,163 @@ function escapeHTML(str) {
   );
 }
 
+// Generic reusable Live Location Autocomplete component with Typo Tolerance (Photon + Nominatim)
+function attachLocationAutocomplete(inputId, dropdownId, onSelectCallback) {
+  const inputEl = document.getElementById(inputId);
+  const dropdownEl = document.getElementById(dropdownId);
+  if (!inputEl || !dropdownEl) return;
+
+  let debounceTimer = null;
+
+  inputEl.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (query.length < 2) {
+      dropdownEl.classList.add('hidden');
+      dropdownEl.innerHTML = '';
+      return;
+    }
+
+    // Show loading state
+    dropdownEl.innerHTML = '<div class="autocomplete-loading"><i class="fa-solid fa-spinner fa-spin"></i> Searching locations worldwide...</div>';
+    dropdownEl.classList.remove('hidden');
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        // Concurrently query Photon (fuzzy & typo tolerant) and Nominatim (structured OSM)
+        const [photonRes, nominatimRes] = await Promise.allSettled([
+          fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6`),
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6&addressdetails=1`)
+        ]);
+
+        const formattedResults = [];
+        const seenCoords = new Set();
+
+        // 1. Process Photon fuzzy geocoding results (handles typos like "hydrabad", "mubai")
+        if (photonRes.status === 'fulfilled' && photonRes.value.ok) {
+          const photonData = await photonRes.value.json();
+          if (photonData && photonData.features) {
+            photonData.features.forEach(f => {
+              const coords = f.geometry ? f.geometry.coordinates : null;
+              if (!coords) return;
+              const lon = coords[0];
+              const lat = coords[1];
+              const coordKey = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+
+              if (seenCoords.has(coordKey)) return;
+              seenCoords.add(coordKey);
+
+              const props = f.properties || {};
+              const titleParts = [props.name || props.street || props.district || props.city].filter(Boolean);
+              const subParts = [props.street, props.district, props.city, props.state, props.country].filter(p => p && p !== titleParts[0]);
+
+              const title = titleParts[0] || 'Location';
+              const subtitle = subParts.join(', ') || props.country || '';
+              const fullAddress = [title, subtitle].filter(Boolean).join(', ');
+
+              formattedResults.push({
+                lat,
+                lon,
+                title,
+                subtitle,
+                fullAddress
+              });
+            });
+          }
+        }
+
+        // 2. Process Nominatim results to complement Photon
+        if (nominatimRes.status === 'fulfilled' && nominatimRes.value.ok) {
+          const nomData = await nominatimRes.value.json();
+          if (Array.isArray(nomData)) {
+            nomData.forEach(item => {
+              const lat = parseFloat(item.lat);
+              const lon = parseFloat(item.lon);
+              const coordKey = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+
+              if (seenCoords.has(coordKey)) return;
+              seenCoords.add(coordKey);
+
+              const parts = item.display_name.split(', ');
+              const title = parts[0] || item.display_name;
+              const subtitle = parts.slice(1).join(', ') || '';
+
+              formattedResults.push({
+                lat,
+                lon,
+                title,
+                subtitle,
+                fullAddress: item.display_name
+              });
+            });
+          }
+        }
+
+        if (formattedResults.length === 0) {
+          dropdownEl.innerHTML = '<div class="autocomplete-empty"><i class="fa-solid fa-location-dot"></i> No matching locations found. Check spelling.</div>';
+          return;
+        }
+
+        // Limit to 7 distinct results
+        const finalResults = formattedResults.slice(0, 7);
+
+        dropdownEl.innerHTML = finalResults.map(item => {
+          const safeTitle = escapeHTML(item.title);
+          const safeSubtitle = escapeHTML(item.subtitle);
+          const safeFull = escapeHTML(item.fullAddress);
+
+          return `
+            <div class="autocomplete-item" data-lat="${item.lat}" data-lon="${item.lon}" data-address="${safeFull}">
+              <i class="fa-solid fa-location-dot autocomplete-icon"></i>
+              <div class="autocomplete-text-container">
+                <div class="autocomplete-title">${safeTitle}</div>
+                <div class="autocomplete-subtitle">${safeSubtitle}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Attach click listener to generated items
+        dropdownEl.querySelectorAll('.autocomplete-item').forEach(itemNode => {
+          itemNode.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            const address = itemNode.getAttribute('data-address');
+            const lat = parseFloat(itemNode.getAttribute('data-lat'));
+            const lon = parseFloat(itemNode.getAttribute('data-lon'));
+
+            inputEl.value = address;
+            dropdownEl.classList.add('hidden');
+            dropdownEl.innerHTML = '';
+
+            if (onSelectCallback) {
+              onSelectCallback({ address, lat, lon });
+            }
+          });
+        });
+
+      } catch (err) {
+        console.warn('Location autocomplete fetch error:', err);
+        dropdownEl.innerHTML = '<div class="autocomplete-empty">Unable to fetch suggestions</div>';
+      }
+    }, 280);
+  });
+
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+      dropdownEl.classList.add('hidden');
+    }
+  });
+
+  // Hide dropdown on Escape key
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdownEl.classList.add('hidden');
+    }
+  });
+}
+
 // Simple fallback router based on hash links
 function routeByUrl() {
   const hash = window.location.hash;
@@ -1036,22 +1294,61 @@ function setupExtraFeatures() {
   }
 
   if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', () => {
-      if (document.body.classList.contains('dark-theme')) {
-        document.body.classList.remove('dark-theme');
-        document.body.classList.add('light-theme');
-        localStorage.setItem('theme', 'light');
-        themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
-        showToast('Switched to Light Mode', 'info');
-      } else {
-        document.body.classList.remove('light-theme');
-        document.body.classList.add('dark-theme');
-        localStorage.setItem('theme', 'dark');
-        themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
-        showToast('Switched to Dark Mode', 'info');
+    themeToggleBtn.addEventListener('click', (e) => {
+      const toggle = () => {
+        if (document.body.classList.contains('dark-theme')) {
+          document.body.classList.remove('dark-theme');
+          document.body.classList.add('light-theme');
+          localStorage.setItem('theme', 'light');
+          themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+          showToast('Switched to Light Mode', 'info');
+        } else {
+          document.body.classList.remove('light-theme');
+          document.body.classList.add('dark-theme');
+          localStorage.setItem('theme', 'dark');
+          themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+          showToast('Switched to Dark Mode', 'info');
+        }
+      };
+
+      // Modern View Transition API for radial clip wipe
+      if (!document.startViewTransition) {
+        toggle();
+        return;
       }
+
+      const x = e.clientX;
+      const y = e.clientY;
+      const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
+
+      const transition = document.startViewTransition(toggle);
+      transition.ready.then(() => {
+        const clipPath = [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${endRadius}px at ${x}px ${y}px)`
+        ];
+        document.documentElement.animate(
+          {
+            clipPath: document.body.classList.contains('dark-theme')
+              ? clipPath
+              : [...clipPath].reverse()
+          },
+          {
+            duration: 450,
+            easing: 'ease-in-out',
+            pseudoElement: document.body.classList.contains('dark-theme')
+              ? '::view-transition-new(root)'
+              : '::view-transition-old(root)'
+          }
+        );
+      });
     });
   }
+
+
 
   // 2. Live Image Preview
   const fileInput = document.getElementById('listing-image-file');
@@ -1134,8 +1431,10 @@ function updateMapMarkers(listings) {
   const coordinates = [];
 
   listings.forEach(l => {
-    const lat = l.latitude || 19.0760;
-    const lng = l.longitude || 72.8777;
+    let lat = parseFloat(l.latitude);
+    let lng = parseFloat(l.longitude);
+    if (isNaN(lat)) lat = 19.0760;
+    if (isNaN(lng)) lng = 72.8777;
 
     const marker = L.marker([lat, lng]);
     const popupContent = `
@@ -1252,13 +1551,14 @@ async function handleNgoVerifySubmit(e) {
   statusDiv.style.color = "var(--accent)";
 
   try {
-    const filename = fileInput.files[0].name;
+    const file = fileInput.files[0];
+    const dataUrl = await readFileAsDataURL(file);
     await fetchWithAuth('/users/verify-doc', {
       method: 'POST',
-      body: JSON.stringify({ verificationDoc: filename })
+      body: JSON.stringify({ verificationDoc: dataUrl })
     });
 
-    statusDiv.innerText = "Status: Pending Review (Doc: " + filename + ")";
+    statusDiv.innerText = "Status: Pending Review (Document Uploaded)";
     statusDiv.style.color = "var(--primary)";
     const verifyForm = document.getElementById('ngo-verify-form');
     if (verifyForm) verifyForm.style.display = 'none';
@@ -1290,3 +1590,607 @@ async function openCertificateModal() {
     showToast('Failed to load certificate stats: ' + err.message, 'error');
   }
 }
+
+// Initialize donor create listing picker map
+function initializePickerMap() {
+  const mapContainer = document.getElementById('listing-picker-map');
+  if (!mapContainer) return;
+
+  const defaultLat = 19.0760;
+  const defaultLng = 72.8777;
+
+  if (!pickerMapInstance) {
+    pickerMapInstance = L.map('listing-picker-map').setView([defaultLat, defaultLng], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(pickerMapInstance);
+
+    // Create search result layer group
+    pickerLayerGroup = L.layerGroup().addTo(pickerMapInstance);
+
+    // Initial default marker
+    pickerMarkerInstance = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(pickerMapInstance);
+
+    // Update coordinates when marker is dragged
+    pickerMarkerInstance.on('dragend', function (e) {
+      const position = pickerMarkerInstance.getLatLng();
+      document.getElementById('listing-latitude').value = position.lat.toFixed(6);
+      document.getElementById('listing-longitude').value = position.lng.toFixed(6);
+    });
+
+    // Update coordinates when map is clicked
+    pickerMapInstance.on('click', function (e) {
+      pickerMarkerInstance.setLatLng(e.latlng);
+      document.getElementById('listing-latitude').value = e.latlng.lat.toFixed(6);
+      document.getElementById('listing-longitude').value = e.latlng.lng.toFixed(6);
+    });
+
+    // Bind Address geocoding search
+    const addressInput = document.getElementById('listing-location');
+    if (addressInput) {
+      addressInput.addEventListener('change', async () => {
+        const query = addressInput.value.trim();
+        if (!query) return;
+
+        // Clear previous search result markers
+        pickerLayerGroup.clearLayers();
+
+        try {
+          // Fetch up to 10 matching locations from Nominatim
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`);
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const bounds = [];
+            data.forEach((place, index) => {
+              const lat = parseFloat(place.lat);
+              const lon = parseFloat(place.lon);
+              const displayName = place.display_name;
+
+              // Place search pin
+              const marker = L.marker([lat, lon]);
+              const popupContent = `
+                <div style="font-family: var(--font-sans); width: 180px; padding: 4px;">
+                  <strong style="font-size: 0.8rem; color: var(--primary);">Search Result #${index + 1}</strong>
+                  <p style="font-size: 0.7rem; margin-top: 4px; margin-bottom: 8px; max-height: 50px; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(displayName)}</p>
+                  <button class="btn btn-primary btn-sm" onclick="selectPickerLocation('${escapeHTML(displayName).replace(/'/g, "\\'")}', ${lat}, ${lon})" style="padding: 4px; font-size: 0.7rem; width: 100%; border-radius: var(--radius-sm);">Select This</button>
+                </div>
+              `;
+              marker.bindPopup(popupContent);
+              marker.addTo(pickerLayerGroup);
+              bounds.push([lat, lon]);
+            });
+
+            // Adjust map view bounds to encompass all results
+            if (bounds.length > 1) {
+              pickerMapInstance.fitBounds(bounds, { padding: [30, 30] });
+            } else {
+              pickerMapInstance.setView(bounds[0], 14);
+            }
+
+            // Default to first choice coordinates
+            const first = data[0];
+            const firstLat = parseFloat(first.lat);
+            const firstLon = parseFloat(first.lon);
+            pickerMarkerInstance.setLatLng([firstLat, firstLon]);
+            document.getElementById('listing-latitude').value = firstLat.toFixed(6);
+            document.getElementById('listing-longitude').value = firstLon.toFixed(6);
+          } else {
+            showToast('No locations matched your address search.', 'warning');
+          }
+        } catch (err) {
+          console.warn('Geocoding search failed:', err);
+        }
+      });
+    }
+  } else {
+    // Invalidate size and reset view
+    setTimeout(() => {
+      pickerMapInstance.invalidateSize();
+      pickerMapInstance.setView([defaultLat, defaultLng], 12);
+      pickerMarkerInstance.setLatLng([defaultLat, defaultLng]);
+      pickerLayerGroup.clearLayers();
+      document.getElementById('listing-latitude').value = defaultLat.toFixed(6);
+      document.getElementById('listing-longitude').value = defaultLng.toFixed(6);
+    }, 150);
+  }
+}
+
+// Global selection handler for map pickers
+window.selectPickerLocation = function(address, lat, lon) {
+  document.getElementById('listing-location').value = address;
+  document.getElementById('listing-latitude').value = lat.toFixed(6);
+  document.getElementById('listing-longitude').value = lon.toFixed(6);
+
+  if (pickerMarkerInstance) {
+    pickerMarkerInstance.setLatLng([lat, lon]);
+  }
+
+  if (pickerLayerGroup) {
+    pickerLayerGroup.clearLayers();
+  }
+
+  showToast('Location selected: ' + address.split(',')[0], 'success');
+};
+
+// Geocode search terms and pan/zoom map view
+async function geocodeAndNavigateMap(query) {
+  if (!mapInstance) return;
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
+      mapInstance.setView([lat, lon], 13);
+    }
+  } catch (err) {
+    console.warn('Map geocode search navigation failed:', err);
+  }
+}
+
+// Center map view on user's current GPS location
+function handleLocateUser(e) {
+  e.preventDefault();
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const { latitude, longitude } = position.coords;
+      if (mapInstance) {
+        mapInstance.setView([latitude, longitude], 14);
+        L.popup()
+          .setLatLng([latitude, longitude])
+          .setContent("<strong>You are here</strong>")
+          .openOn(mapInstance);
+      }
+    }, (err) => {
+      showToast("Error getting location: " + err.message, "warning");
+    });
+  } else {
+    showToast("Geolocation services are not supported by this browser.", "warning");
+  }
+}
+
+// Calculate and update gamified badges & levels based on XP
+function updateBadgesAndLevel(xp) {
+  const progressBar = document.getElementById('xp-progress-bar');
+  const levelText = document.getElementById('xp-next-level');
+  if (!progressBar || !levelText) return;
+
+  const nextLevelXp = Math.ceil((xp + 1) / 250) * 250;
+  const currentLevelBase = Math.floor(xp / 250) * 250;
+  const progressPercent = Math.min(((xp - currentLevelBase) / 250) * 100, 100);
+
+  progressBar.style.width = `${progressPercent}%`;
+  levelText.innerText = `${xp} / ${nextLevelXp} XP (Level ${Math.floor(xp / 250) + 1})`;
+
+  const badgeBronze = document.getElementById('badge-bronze');
+  const badgeSilver = document.getElementById('badge-silver');
+  const badgeGold = document.getElementById('badge-gold');
+  const badgeHero = document.getElementById('badge-hero');
+
+  if (xp >= 50) badgeBronze.classList.remove('locked');
+  else badgeBronze.classList.add('locked');
+
+  if (xp >= 150) badgeSilver.classList.remove('locked');
+  else badgeSilver.classList.add('locked');
+
+  if (xp >= 250) badgeGold.classList.remove('locked');
+  else badgeGold.classList.add('locked');
+
+  if (xp >= 500) badgeHero.classList.remove('locked');
+  else badgeHero.classList.add('locked');
+}
+
+// Generate Leaflet turn-by-turn routing directions
+function showDirectionsToPickup(destLat, destLng) {
+  const modal = document.getElementById('listing-detail-modal');
+  if (modal) modal.close();
+
+  showSection('browse');
+
+  if (!mapInstance) return;
+
+  // Clear previous routing lines
+  if (routingControlInstance) {
+    mapInstance.removeControl(routingControlInstance);
+    routingControlInstance = null;
+  }
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const { latitude, longitude } = position.coords;
+      
+      routingControlInstance = L.Routing.control({
+        waypoints: [
+          L.latLng(latitude, longitude),
+          L.latLng(destLat, destLng)
+        ],
+        routeWhileDragging: true,
+        createMarker: function() { return null; } // Only show the line path
+      }).addTo(mapInstance);
+
+      showToast("Directions route successfully plotted on map!", "success");
+    }, (err) => {
+      showToast("GPS error: " + err.message, "warning");
+    });
+  } else {
+    showToast("Geolocation services are not supported by this browser.", "warning");
+  }
+}
+
+// Open Coordination Chat Room dialog
+async function openListingChat(listingId) {
+  // Close details modal
+  const detailModal = document.getElementById('listing-detail-modal');
+  if (detailModal) detailModal.close();
+
+  const chatModal = document.getElementById('chat-modal');
+  if (!chatModal) return;
+
+  document.getElementById('chat-listing-id').value = listingId;
+  document.getElementById('chat-message-input').value = '';
+
+  const chatMessagesBox = document.getElementById('chat-messages-container');
+  chatMessagesBox.innerHTML = '<p class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Retrieving conversation logs...</p>';
+
+  chatModal.showModal();
+
+  // Fetch messages initially
+  await fetchChatMessages(listingId);
+
+  // Clear previous polling intervals
+  if (chatPollInterval) {
+    clearInterval(chatPollInterval);
+  }
+
+  // Poll for new messages every 4 seconds
+  chatPollInterval = setInterval(() => {
+    fetchChatMessages(listingId);
+  }, 4000);
+}
+
+// Retrieve message history from database
+async function fetchChatMessages(listingId) {
+  const chatMessagesBox = document.getElementById('chat-messages-container');
+  if (!chatMessagesBox) return;
+
+  try {
+    const messages = await fetchWithAuth(`/messages/${listingId}`);
+    if (messages.length === 0) {
+      chatMessagesBox.innerHTML = '<p class="empty-state">No messages yet. Send a note to coordinate pickup details!</p>';
+    } else {
+      const currentUserId = state.currentUser ? state.currentUser.id : null;
+      chatMessagesBox.innerHTML = messages.map(m => {
+        const isMe = m.sender_id === currentUserId;
+        const alignStyle = isMe ? 'align-self: flex-end; background-color: var(--primary-light);' : 'align-self: flex-start; background-color: var(--border);';
+        const nameColor = isMe ? 'var(--primary)' : 'var(--dark)';
+        
+        return `
+          <div style="max-width: 80%; padding: 8px 12px; border-radius: var(--radius-sm); margin: 2px 0; ${alignStyle}">
+            <strong style="font-size: 0.65rem; display: block; color: ${nameColor};">${escapeHTML(m.sender_name)}</strong>
+            <span style="font-size: 0.8rem; display: block; margin-top: 2px; color: var(--dark);">${escapeHTML(m.text)}</span>
+            <span style="font-size: 0.55rem; color: var(--text-muted); display: block; text-align: right; margin-top: 4px;">${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Scroll to bottom
+      chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
+    }
+  } catch (err) {
+    console.error('Failed to poll chat:', err);
+  }
+}
+
+// Send chat message
+async function sendChatMessage(listingId, text) {
+  try {
+    await fetchWithAuth('/messages', {
+      method: 'POST',
+      body: JSON.stringify({ listingId, text })
+    });
+    // Immediately refresh list
+    fetchChatMessages(listingId);
+  } catch (err) {
+    showToast('Failed to send message: ' + err.message, 'error');
+  }
+}
+
+// Window scope registrations for inline HTML event click/submit attributes
+window.showDirectionsToPickup = showDirectionsToPickup;
+window.openListingChat = openListingChat;
+window.openClaimVerification = openClaimVerification;
+
+// --- ADMINISTRATIVE CONTROL DASHBOARD ACTIONS ---
+
+let adminRolesChartInstance = null;
+let adminListingsChartInstance = null;
+
+async function loadAdminDashboard() {
+  const usersTableBody = document.getElementById('admin-users-table-body');
+  const ngoVerifyList = document.getElementById('admin-pending-verification-list');
+  
+  if (usersTableBody) usersTableBody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Retrieving users...</td></tr>';
+  if (ngoVerifyList) ngoVerifyList.innerHTML = '<p class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Checking documents...</p>';
+
+  try {
+    // 1. Fetch statistics
+    const stats = await fetchWithAuth('/admin/stats');
+    document.getElementById('admin-stat-users').innerText = stats.totalUsers || 0;
+    document.getElementById('admin-stat-listings').innerText = stats.totalListings || 0;
+    document.getElementById('admin-stat-claims').innerText = stats.completedClaims || 0;
+
+    // Render interactive analytics charts
+    renderAdminCharts(stats);
+
+    // 2. Fetch users list
+    const users = await fetchWithAuth('/admin/users');
+    
+    if (users.length === 0) {
+      usersTableBody.innerHTML = '<tr><td colspan="5" class="empty-state">No registered accounts in system.</td></tr>';
+    } else {
+      usersTableBody.innerHTML = users.map(u => {
+        let roleBadge = '';
+        if (u.role === 'donor') roleBadge = '<span class="status-tag status-available" style="font-size:9px; background-color: var(--secondary-light); color: var(--secondary);">donor</span>';
+        else if (u.role === 'admin') roleBadge = '<span class="status-tag status-reserved" style="font-size:9px; background-color: var(--error-light); color: var(--error);">admin</span>';
+        else roleBadge = '<span class="status-tag status-claimed" style="font-size:9px; background-color: var(--primary-light); color: var(--primary);">receiver</span>';
+
+        return `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 10px;"><strong>${escapeHTML(u.username)}</strong></td>
+            <td style="padding: 10px; color: var(--text-muted);">${escapeHTML(u.email)}</td>
+            <td style="padding: 10px;">${escapeHTML(u.phone || 'N/A')}</td>
+            <td style="padding: 10px;">${roleBadge}</td>
+            <td style="padding: 10px; text-align: right;">
+              <button class="btn btn-secondary btn-sm" onclick="editUser('${u._id}')" style="padding: 4px 8px; font-size: 0.75rem;"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="deleteUser('${u._id}')" style="padding: 4px 8px; font-size: 0.75rem;"><i class="fa-solid fa-trash-can"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 3. Render NGO document verifications list
+    const pendingNgos = users.filter(u => u.role === 'receiver' && u.verification_doc && u.verification_doc !== 'verified');
+    if (pendingNgos.length === 0) {
+      ngoVerifyList.innerHTML = '<p class="empty-state">No pending documents to verify.</p>';
+    } else {
+      ngoVerifyList.innerHTML = pendingNgos.map(ngo => {
+        const isImg = ngo.verification_doc && ngo.verification_doc.startsWith('data:image/');
+        const viewBtn = `<button class="btn btn-secondary btn-sm" onclick="viewVerificationDoc('${ngo.verification_doc.replace(/'/g, "\\'")}')" style="padding: 4px 8px; font-size: 0.7rem;"><i class="fa-solid fa-eye"></i> View Doc</button>`;
+        const thumb = isImg ? `<img src="${ngo.verification_doc}" onclick="viewVerificationDoc('${ngo.verification_doc.replace(/'/g, "\\'")}')" style="width: 50px; height: 50px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; margin-top: 6px; box-shadow: var(--shadow-sm); display: block;" alt="Doc Thumbnail">` : '';
+
+        return `
+          <div class="dashboard-item-row" style="padding: 12px; flex-direction: column; align-items: stretch; gap: 8px;">
+            <div>
+              <strong style="font-size: 0.85rem; display: block; color: var(--dark);">${escapeHTML(ngo.username)}</strong>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Pending tax-exempt document:</span>
+              ${thumb}
+            </div>
+            <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; margin-top: 4px;">
+              ${viewBtn}
+              <button class="btn btn-danger btn-sm" onclick="verifyNgoUser('${ngo._id}', false)" style="padding: 4px 8px; font-size: 0.7rem;">Reject</button>
+              <button class="btn btn-primary btn-sm" onclick="verifyNgoUser('${ngo._id}', true)" style="padding: 4px 8px; font-size: 0.7rem;">Approve</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    showToast('Failed to load admin lists: ' + err.message, 'error');
+  }
+}
+
+function renderAdminCharts(stats) {
+  const rolesCtx = document.getElementById('admin-roles-chart');
+  const listingsCtx = document.getElementById('admin-listings-chart');
+
+  if (!rolesCtx || !listingsCtx) return;
+
+  const rData = stats.roles || { donor: 0, receiver: 0, admin: 0 };
+  const lData = stats.listings || { available: 0, reserved: 0, claimed: 0, expired: 0 };
+
+  // 1. User Roles Pie Chart
+  if (adminRolesChartInstance) {
+    adminRolesChartInstance.destroy();
+  }
+  adminRolesChartInstance = new Chart(rolesCtx, {
+    type: 'pie',
+    data: {
+      labels: ['Donors', 'Receivers', 'Admins'],
+      datasets: [{
+        data: [rData.donor, rData.receiver, rData.admin],
+        backgroundColor: ['#1565c0', '#2e7d32', '#f9a825'],
+        borderWidth: 1,
+        borderColor: 'var(--surface)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 8,
+            font: { size: 9, family: 'var(--font-sans)' },
+            color: 'var(--dark)'
+          }
+        }
+      }
+    }
+  });
+
+  // 2. Listing Status Bar Chart
+  if (adminListingsChartInstance) {
+    adminListingsChartInstance.destroy();
+  }
+  adminListingsChartInstance = new Chart(listingsCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Avail', 'Resv', 'Claimed', 'Expr'],
+      datasets: [{
+        label: 'Count',
+        data: [lData.available, lData.reserved, lData.claimed, lData.expired],
+        backgroundColor: ['#2e7d32', '#f9a825', '#1565c0', '#c62828'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 8 }, color: 'var(--dark)' }
+        },
+        y: {
+          grid: { color: 'var(--border)' },
+          ticks: { font: { size: 8 }, color: 'var(--dark)', precision: 0 }
+        }
+      }
+    }
+  });
+}
+
+function viewVerificationDoc(docData) {
+  const modal = document.getElementById('admin-doc-modal');
+  const img = document.getElementById('admin-doc-preview-image');
+  const fallback = document.getElementById('admin-doc-preview-fallback');
+
+  if (!modal) return;
+
+  if (docData && (docData.startsWith('data:image/') || docData.startsWith('data:application/pdf') || docData.startsWith('data:'))) {
+    img.src = docData;
+    img.style.display = 'inline-block';
+    fallback.style.display = 'none';
+  } else if (docData && (docData.startsWith('http://') || docData.startsWith('https://'))) {
+    img.src = docData;
+    img.style.display = 'inline-block';
+    fallback.style.display = 'none';
+  } else if (docData && (docData.endsWith('.jpg') || docData.endsWith('.jpeg') || docData.endsWith('.png') || docData.endsWith('.webp') || docData.endsWith('.gif'))) {
+    img.src = '/uploads/' + docData;
+    img.style.display = 'inline-block';
+    fallback.style.display = 'none';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    fallback.style.display = 'block';
+    fallback.innerText = `Document details: ${escapeHTML(docData)}`;
+  }
+
+  modal.showModal();
+}
+
+async function handleAdminUserSubmit(e) {
+  e.preventDefault();
+  
+  const userId = document.getElementById('admin-user-id').value;
+  const username = document.getElementById('admin-user-username').value;
+  const email = document.getElementById('admin-user-email').value;
+  const phone = document.getElementById('admin-user-phone').value;
+  const role = document.getElementById('admin-user-role').value;
+  const password = document.getElementById('admin-user-password').value;
+
+  try {
+    if (userId) {
+      // Edit User mode
+      await fetchWithAuth(`/admin/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ username, email, phone, role })
+      });
+      showToast('User profile updated successfully.', 'success');
+    } else {
+      // Create User mode
+      if (!password) {
+        showToast('Password is required for new user profiles.', 'warning');
+        return;
+      }
+      await fetchWithAuth('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({ username, email, phone, role, password })
+      });
+      showToast('New user account created successfully.', 'success');
+    }
+
+    cancelAdminUserEdit();
+    loadAdminDashboard();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function editUser(userId) {
+  try {
+    const users = await fetchWithAuth('/admin/users');
+    const u = users.find(user => user._id === userId);
+    if (!u) return;
+
+    document.getElementById('admin-user-id').value = u._id;
+    document.getElementById('admin-user-username').value = u.username;
+    document.getElementById('admin-user-email').value = u.email;
+    document.getElementById('admin-user-phone').value = u.phone || '';
+    document.getElementById('admin-user-role').value = u.role;
+    
+    // Hide password field for edits to prevent accidental rewrites
+    document.getElementById('admin-password-group').style.display = 'none';
+    document.getElementById('admin-user-password').required = false;
+
+    document.getElementById('admin-form-title').innerHTML = '<i class="fa-solid fa-user-pen icon-accent"></i> Edit Profile';
+    document.getElementById('admin-form-subtitle').innerText = 'Modify details of the selected profile.';
+    document.getElementById('btn-admin-cancel-edit').style.display = 'inline-block';
+    
+    // Scroll form into view
+    document.getElementById('admin-user-form').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteUser(userId) {
+  if (!confirm('Are you sure you want to delete this user profile? All associated records will be lost.')) return;
+
+  try {
+    await fetchWithAuth(`/admin/users/${userId}`, {
+      method: 'DELETE'
+    });
+    showToast('User deleted successfully.', 'success');
+    loadAdminDashboard();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function verifyNgoUser(userId, approve) {
+  try {
+    await fetchWithAuth(`/admin/users/${userId}/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ approve })
+    });
+    showToast(approve ? 'NGO Verified!' : 'NGO Verification Rejected.', 'success');
+    loadAdminDashboard();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function cancelAdminUserEdit() {
+  document.getElementById('admin-user-id').value = '';
+  document.getElementById('admin-user-form').reset();
+  
+  // Restore password field
+  document.getElementById('admin-password-group').style.display = 'block';
+  
+  document.getElementById('admin-form-title').innerHTML = '<i class="fa-solid fa-user-plus icon-accent"></i> Add New Profile';
+  document.getElementById('admin-form-subtitle').innerText = 'Create a new donor or receiver profile manually.';
+  document.getElementById('btn-admin-cancel-edit').style.display = 'none';
+}
+
+window.cancelAdminUserEdit = cancelAdminUserEdit;
+window.editUser = editUser;
+window.deleteUser = deleteUser;
+window.verifyNgoUser = verifyNgoUser;
+window.viewVerificationDoc = viewVerificationDoc;

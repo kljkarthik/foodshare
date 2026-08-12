@@ -3,13 +3,27 @@
   "version": "1.0.0",
   "description": "A web application that connects food donors with food receivers to reduce food waste.",
   "private": true,
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.8.0"
+  },
   "scripts": {
     "backend:install": "cd backend && npm install",
     "backend:start": "cd backend && npm start",
     "backend:dev": "cd backend && npm run dev",
     "frontend:start": "cd frontend && npm start",
     "start": "npm run backend:start",
-    "dev": "npm run backend:dev"
+    "dev": "npm run backend:dev",
+    "build": "npm run build:frontend",
+    "build:frontend": "echo \"Frontend is static for Vercel deployment; no build step required.\"",
+    "build:backend": "echo \"Backend is deployed as Vercel serverless functions.\"",
+    "vercel-build": "npm run build"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   },
   "keywords": ["food-share", "food-waste", "donation"],
   "author": "",

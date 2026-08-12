@@ -16,6 +16,9 @@
   <!-- Leaflet Maps CDN -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Leaflet Routing Machine CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -48,6 +51,8 @@
           <li class="donor-only hidden"><a href="#" class="nav-link" id="nav-donate">Share Food</a></li>
           <!-- Receiver Only Link -->
           <li class="receiver-only hidden"><a href="#" class="nav-link" id="nav-reservations">My Reservations</a></li>
+          <!-- Admin Only Link -->
+          <li class="admin-only hidden"><a href="#" class="nav-link" id="nav-admin">Admin Dashboard</a></li>
           <!-- Theme Toggle Button -->
           <li>
             <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme">
@@ -251,11 +256,12 @@
         </div>
       </div>
 
-      <!-- Search & Filters Container -->
       <div class="filters-container">
-        <div class="search-box">
+        <div class="search-box autocomplete-wrapper" style="position: relative; display: flex; align-items: center; width: 100%;">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" id="filter-search" placeholder="Search by title, location, description...">
+          <input type="text" id="filter-search" placeholder="Search by title, location, description..." autocomplete="off" style="padding-right: 100px; width: 100%;">
+          <button id="btn-locate-me" class="btn btn-secondary btn-sm" style="position: absolute; right: 8px; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem;" title="Locate Me"><i class="fa-solid fa-crosshairs"></i> Locate Me</button>
+          <div id="filter-search-dropdown" class="autocomplete-dropdown hidden"></div>
         </div>
         <div class="filter-actions">
           <div class="tags-selector" id="tags-selector">
@@ -333,22 +339,29 @@
               </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group autocomplete-wrapper">
               <label for="listing-location">Pickup Location (Address)</label>
               <div class="input-icon-wrapper">
                 <i class="fa-solid fa-location-dot input-icon"></i>
-                <input type="text" id="listing-location" required placeholder="e.g. 123 Main St, Bakery Corner">
+                <input type="text" id="listing-location" required placeholder="e.g. Gateway of India, Colaba, Mumbai" autocomplete="off">
               </div>
+              <div id="listing-location-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+
+            <!-- Create Listing interactive picker map -->
+            <div class="form-group">
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Pinpoint Pickup Location (Click map or type address to search)</label>
+              <div id="listing-picker-map" style="height: 180px; border-radius: var(--radius-sm); border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 10;"></div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label for="listing-latitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Latitude (optional)</label>
-                <input type="number" step="any" id="listing-latitude" placeholder="e.g. 42.3601" value="42.3601">
+                <label for="listing-latitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Latitude (Auto-calculated)</label>
+                <input type="number" step="any" id="listing-latitude" placeholder="e.g. 19.0760" value="19.0760" readonly style="background-color: var(--primary-light); cursor: not-allowed;">
               </div>
               <div class="form-group">
-                <label for="listing-longitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Longitude (optional)</label>
-                <input type="number" step="any" id="listing-longitude" placeholder="e.g. -71.0589" value="-71.0589">
+                <label for="listing-longitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Longitude (Auto-calculated)</label>
+                <input type="number" step="any" id="listing-longitude" placeholder="e.g. 72.8777" value="72.8777" readonly style="background-color: var(--primary-light); cursor: not-allowed;">
               </div>
             </div>
 
@@ -475,9 +488,34 @@
           <div class="dashboard-card">
             <h2 class="card-title"><i class="fa-solid fa-award icon-accent"></i> Rescuer Rank & XP</h2>
             <p class="card-subtitle">Earn 50 XP for every surplus meal claim completed.</p>
-            <div class="volunteer-xp-card" style="background-color: var(--primary-light); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-md); text-align: center; margin-top: 12px;">
+            <div class="volunteer-xp-card" style="background-color: var(--primary-trans); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-md); text-align: center; margin-top: 12px; position: relative; overflow: hidden; margin-bottom: 20px;">
               <h5 style="margin-bottom: 4px; font-size: 0.8rem; text-transform: uppercase; color: var(--primary); letter-spacing: 0.05em;"><i class="fa-solid fa-trophy"></i> Total XP</h5>
-              <p style="font-size: 1.5rem; font-weight: 800; color: var(--dark);"><span id="user-xp-display">0</span> XP</p>
+              <p style="font-size: 2.2rem; font-weight: 800; color: var(--primary); margin: 6px 0;"><span id="user-xp-display">0</span> XP</p>
+              <div class="xp-progress-bar-container" style="background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px;">
+                <div id="xp-progress-bar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; height: 100%; transition: width 0.5s ease-in-out;"></div>
+              </div>
+              <p id="xp-next-level" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Loading levels...</p>
+            </div>
+
+            <!-- Gamified Badges Showcase -->
+            <h4 style="font-size: 0.9rem; margin-bottom: 12px; font-family: var(--font-headings); font-weight: 700; color: var(--dark); border-top: 1px solid var(--border); padding-top: 16px;"><i class="fa-solid fa-medal"></i> My Achievements</h4>
+            <div class="achievements-badges-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
+              <div class="badge-item locked" id="badge-bronze" title="Bronze Spoon: Unlocks at 50 XP (1 Claim)">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-utensils"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Bronze</span>
+              </div>
+              <div class="badge-item locked" id="badge-silver" title="Silver Fork: Unlocks at 150 XP (3 Claims)">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-utensil-spoon"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Silver</span>
+              </div>
+              <div class="badge-item locked" id="badge-gold" title="Gold Plate: Unlocks at 250 XP (5 Claims)">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-plate-wheat"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Gold</span>
+              </div>
+              <div class="badge-item locked" id="badge-hero" title="Zero Waste Hero: Unlocks at 500+ XP">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-shield-halved"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Hero</span>
+              </div>
             </div>
           </div>
 
@@ -500,6 +538,127 @@
               <button type="submit" class="btn btn-secondary btn-full">Submit Verification</button>
             </form>
             <div id="ngo-verification-status" style="margin-top: 10px; font-size: 0.8rem; font-weight: 700; color: var(--primary);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN PANEL CONTROL PANEL SECTION -->
+    <section id="admin-section" class="dashboard-section hidden">
+      <div class="dashboard-container">
+        <!-- Sidebar / Statistics Summary -->
+        <div class="dashboard-sidebar">
+          <div class="dashboard-profile-card">
+            <div class="profile-avatar"><i class="fa-solid fa-user-shield"></i></div>
+            <h3 class="profile-name">Admin Console</h3>
+            <p class="profile-role">System Administrator</p>
+          </div>
+          
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-chart-line icon-accent"></i> Platform Stats</h2>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <span>Total Accounts:</span>
+                <strong id="admin-stat-users">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <span>Active Listings:</span>
+                <strong id="admin-stat-listings">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding-bottom: 6px;">
+                <span>Claimed Rescues:</span>
+                <strong id="admin-stat-claims">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-chart-pie icon-accent"></i> User Roles Distribution</h2>
+            <div style="margin-top: 12px; height: 160px; position: relative;">
+              <canvas id="admin-roles-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-chart-column icon-accent"></i> Listing Status</h2>
+            <div style="margin-top: 12px; height: 160px; position: relative;">
+              <canvas id="admin-listings-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Pending NGO Document Verification approvals -->
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-file-signature icon-accent"></i> NGO Approvals</h2>
+            <p class="card-subtitle">Verify tax-exempt registrations.</p>
+            <div id="admin-pending-verification-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <p class="empty-state">No pending documents to verify.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="dashboard-content">
+          <!-- Add/Edit User Card -->
+          <div class="dashboard-card">
+            <h2 class="card-title" id="admin-form-title"><i class="fa-solid fa-user-plus icon-accent"></i> Add New Profile</h2>
+            <p class="card-subtitle" id="admin-form-subtitle">Create a new donor or receiver profile manually.</p>
+            
+            <form id="admin-user-form" style="margin-top: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+              <input type="hidden" id="admin-user-id">
+              
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-username">Username / Organization</label>
+                <input type="text" id="admin-user-username" required placeholder="e.g. Bandra Bakery">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-email">Email Address</label>
+                <input type="email" id="admin-user-email" required placeholder="name@example.com">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-phone">Phone Number</label>
+                <input type="text" id="admin-user-phone" placeholder="+91 XXXXX XXXXX">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-role">User Role</label>
+                <select id="admin-user-role" class="filter-select" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px;">
+                  <option value="donor">Donor (Restaurant/Retail)</option>
+                  <option value="receiver">Receiver (NGO/Kitchen)</option>
+                  <option value="admin">Administrator</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0; grid-column: span 2;" id="admin-password-group">
+                <label for="admin-user-password">Password</label>
+                <input type="password" id="admin-user-password" placeholder="••••••••" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px;">
+              </div>
+              
+              <div style="grid-column: span 2; display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" id="btn-admin-cancel-edit" style="display: none;" onclick="cancelAdminUserEdit()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btn-admin-submit-user">Save Profile</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Users Table List -->
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-users icon-accent"></i> Registered Profiles</h2>
+            <p class="card-subtitle">Manage all donor and receiver credentials.</p>
+            
+            <div style="overflow-x: auto; margin-top: 15px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background-color: var(--light); border-bottom: 1px solid var(--border);">
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Name</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Email</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Phone</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Role</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted); text-align: right; width: 140px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-table-body">
+                  <!-- JS Dynamic table rows -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -630,7 +789,41 @@
     </div>
   </footer>
 
+  <!-- IN-APP COORDINATION CHAT MODAL -->
+  <dialog class="modal" id="chat-modal">
+    <div class="modal-content" style="max-height: 520px; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-comments icon-accent"></i> Coordination Chat</h3>
+        <button class="modal-close" id="modal-close-chat-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; padding: 16px;">
+        <div id="chat-messages-container" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--light); height: 280px;">
+          <p class="empty-state">No messages yet. Send a note to coordinate pickup details!</p>
+        </div>
+        <form id="chat-send-form" style="display: flex; gap: 8px;">
+          <input type="hidden" id="chat-listing-id">
+          <input type="text" id="chat-message-input" required placeholder="Type coordination note..." style="flex-grow: 1; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; outline: none; background: var(--surface); color: var(--dark);">
+          <button type="submit" class="btn btn-primary" style="padding: 8px 16px;"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ADMIN NGO VERIFICATION DOCUMENT LIGHTBOX MODAL -->
+  <dialog class="modal" id="admin-doc-modal">
+    <div class="modal-content" style="max-width: 650px; padding: 20px;">
+      <div class="modal-header">
+        <h3>NGO Tax-Exempt Document Preview</h3>
+        <button class="modal-close" onclick="document.getElementById('admin-doc-modal').close()" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="text-align: center; max-height: 480px; overflow-y: auto; padding: 15px 0;">
+        <img id="admin-doc-preview-image" src="" alt="NGO Verification Document" onerror="this.style.display='none'; document.getElementById('admin-doc-preview-fallback').style.display='block'; document.getElementById('admin-doc-preview-fallback').innerText='Could not render document visual preview (file not found on server).';" style="max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);">
+        <p id="admin-doc-preview-fallback" class="empty-state" style="display: none; padding: 20px; font-weight: 700; color: var(--error);">Could not render document visual preview.</p>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Custom JavaScript -->
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=2.3"></script>
 </body>
 </html>
