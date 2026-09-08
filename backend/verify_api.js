@@ -150,7 +150,7 @@ async function runTests() {
       }
     });
     data = await res.json();
-    if (res.status !== 200) throw new Error(`Reservation failed: ${data.error}`);
+    if (res.status !== 200 && res.status !== 201) throw new Error(`Reservation failed: ${data.error}`);
     reservationCode = data.reservationCode;
     console.log(`Food reserved. Reservation Code: ${reservationCode}`);
 

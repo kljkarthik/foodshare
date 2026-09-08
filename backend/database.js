@@ -36,7 +36,7 @@ function loadLocalEnv() {
 
 loadLocalEnv();
 
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb+srv://kljkarthik:kljkarthik@foodshare.5nr7wjq.mongodb.net/foodshare?retryWrites=true&w=majority&appName=foodshare';
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
 let cached = global.__foodShareMongoCache;
 
@@ -225,8 +225,9 @@ async function seedMockData() {
 
 // Connect Database wrapper
 async function connectDatabase() {
-  if (!MONGO_URI) {
-    throw new Error('MongoDB connection string is missing. Set MONGO_URI or MONGODB_URI.');
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI || MONGO_URI;
+  if (!uri) {
+    throw new Error('MongoDB connection string is missing. Please set the MONGODB_URI or MONGO_URI environment variable.');
   }
 
   if (cached.conn) {
@@ -234,7 +235,7 @@ async function connectDatabase() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGO_URI).then(async (mongooseInstance) => {
+    cached.promise = mongoose.connect(uri).then(async (mongooseInstance) => {
       console.log('Connected to MongoDB Atlas successfully.');
       await seedMockData();
       return mongooseInstance;

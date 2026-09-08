@@ -5,7 +5,13 @@ const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const { User, Listing, Reservation, Message } = require('./database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'foodshare-secret-key-2026';
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is missing. Please set JWT_SECRET.');
+  }
+  return secret;
+}
 
 // Helper to escape HTML to prevent XSS in demo
 function escapeHTML(str) {
@@ -28,10 +34,15 @@ function authenticateToken(req, res, next) {
   }
 
   try {
-    const verified = jwt.verify(token, JWT_SECRET);
+    const secret = getJwtSecret();
+    const verified = jwt.verify(token, secret);
     req.user = verified; // { id, role, username }
     next();
   } catch (err) {
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT authentication error:', err.message);
+      return res.status(500).json({ error: 'Authentication configuration error.' });
+    }
     res.status(403).json({ error: 'Invalid or expired token.' });
   }
 }
@@ -110,9 +121,10 @@ router.post('/auth/login', async (req, res) => {
     }
 
     // Generate JWT Token
+    const secret = getJwtSecret();
     const token = jwt.sign(
       { id: user._id.toString(), username: user.username, role: user.role },
-      JWT_SECRET,
+      secret,
       { expiresIn: '24h' }
     );
 
