@@ -116,7 +116,6 @@ function showSection(sectionId) {
   const donorEl = document.getElementById('donor-section');
   const receiverEl = document.getElementById('receiver-dashboard');
   const adminEl = document.getElementById('admin-section');
-  const uiDemoEl = document.getElementById('ui-demo-section');
 
   if (heroEl) heroEl.classList.add('hidden');
   if (howWorksEl) howWorksEl.classList.add('hidden');
@@ -126,7 +125,6 @@ function showSection(sectionId) {
   if (donorEl) donorEl.classList.add('hidden');
   if (receiverEl) receiverEl.classList.add('hidden');
   if (adminEl) adminEl.classList.add('hidden');
-  if (uiDemoEl) uiDemoEl.classList.add('hidden');
 
   // Deactivate all navbar links
   document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
@@ -139,10 +137,6 @@ function showSection(sectionId) {
     document.getElementById('nav-home')?.classList.add('active');
     if (typeof setupScrollAnimations === 'function') setupScrollAnimations();
     if (typeof animateCounters === 'function') animateCounters();
-  } else if (sectionId === 'ui-demo') {
-    if (uiDemoEl) uiDemoEl.classList.remove('hidden');
-    document.getElementById('nav-ui-demo')?.classList.add('active');
-    if (typeof initUiDemo === 'function') initUiDemo();
   } else if (sectionId === 'auth') {
     if (authEl) authEl.classList.remove('hidden');
   } else if (sectionId === 'browse') {
@@ -2281,63 +2275,11 @@ function animateCounters() {
   });
 }
 
-function initUiDemo() {
-  const btnSuccess = document.getElementById('demo-toast-success');
-  const btnInfo = document.getElementById('demo-toast-info');
-  const btnWarning = document.getElementById('demo-toast-warning');
-  const btnError = document.getElementById('demo-toast-error');
-  const btnToggleSkeleton = document.getElementById('demo-toggle-skeleton');
-
-  if (btnSuccess) btnSuccess.onclick = () => showToast('Food listing reserved successfully! Code: FH982A', 'success');
-  if (btnInfo) btnInfo.onclick = () => showToast('Turn-by-turn route loaded to pickup spot.', 'info');
-  if (btnWarning) btnWarning.onclick = () => showToast('Listing expires in less than 30 minutes!', 'warning');
-  if (btnError) btnError.onclick = () => showToast('Invalid reservation code. Please try again.', 'error');
-
-  if (btnToggleSkeleton) {
-    btnToggleSkeleton.onclick = () => {
-      const container = document.getElementById('demo-skeleton-container');
-      if (container.dataset.state === 'loaded') {
-        container.dataset.state = 'skeleton';
-        container.innerHTML = `
-          <div class="skeleton-card">
-            <div class="skeleton-image shimmer"></div>
-            <div class="skeleton-body">
-              <div class="skeleton-title shimmer"></div>
-              <div class="skeleton-text shimmer"></div>
-              <div class="skeleton-text shimmer" style="width: 60%"></div>
-            </div>
-          </div>`;
-      } else {
-        container.dataset.state = 'loaded';
-        container.innerHTML = `
-          <div class="food-card" style="border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface);">
-            <div style="height: 160px; background: linear-gradient(135deg, #0F5132, #10B981); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 2rem;">
-              <i class="fa-solid fa-bread-slice"></i>
-            </div>
-            <div style="padding: 16px;">
-              <span class="status-tag status-available" style="font-size: 10px;">Available</span>
-              <h4 style="font-size: 1.1rem; margin: 8px 0 4px; color: var(--dark);">Artisan Sourdough Loaves</h4>
-              <p style="font-size: 0.82rem; color: var(--text-muted);"><i class="fa-solid fa-location-dot"></i> Baker's Oven &bull; 6 Loaves</p>
-            </div>
-          </div>`;
-      }
-    };
-  }
-}
-
 // Global hookups
 window.setupScrollAnimations = setupScrollAnimations;
 window.animateCounters = animateCounters;
-window.initUiDemo = initUiDemo;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const navDemo = document.getElementById('nav-ui-demo');
-  if (navDemo) {
-    navDemo.addEventListener('click', (e) => {
-      e.preventDefault();
-      showSection('ui-demo');
-    });
-  }
   const navHowItWorks = document.getElementById('nav-how-it-works');
   if (navHowItWorks) {
     navHowItWorks.addEventListener('click', (e) => {

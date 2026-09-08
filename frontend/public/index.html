@@ -49,7 +49,6 @@
           <li><a href="#" class="nav-link" id="nav-browse">Browse Food</a></li>
           <li><a href="#how-it-works-section" class="nav-link" id="nav-how-it-works">How It Works</a></li>
           <li><a href="#impact-section" class="nav-link" id="nav-impact">Impact</a></li>
-          <li><a href="#ui-demo" class="nav-link" id="nav-ui-demo"><i class="fa-solid fa-sparkles"></i> UI Demo</a></li>
           <!-- Donor Only Link -->
           <li class="donor-only hidden"><a href="#" class="nav-link" id="nav-donate">Share Food</a></li>
           <!-- Receiver Only Link -->
@@ -810,98 +809,6 @@
       </div>
     </section>
 
-    <!-- UI DEMO & DESIGN SYSTEM SHOWCASE SECTION -->
-    <section id="ui-demo-section" class="ui-demo-section container hidden">
-      <div class="section-header">
-        <div>
-          <div class="hero-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> Design System</div>
-          <h2 class="section-title">FoodShare Premium UI / UX Showcase</h2>
-          <p class="section-subtitle">Interactive playground of modern design tokens, notifications, micro-interactions, and skeleton states.</p>
-        </div>
-      </div>
-
-      <div class="demo-grid">
-        <!-- Toast & Notification Playground -->
-        <div class="demo-card">
-          <div class="demo-card-header">
-            <i class="fa-solid fa-bell icon-accent"></i>
-            <h3>Interactive Floating Toast Notifications</h3>
-          </div>
-          <p>Trigger dynamic floating toast alerts with progress animations.</p>
-          <div class="demo-btn-group">
-            <button class="btn btn-primary btn-sm" id="demo-toast-success"><i class="fa-solid fa-circle-check"></i> Success Toast</button>
-            <button class="btn btn-secondary btn-sm" id="demo-toast-info"><i class="fa-solid fa-circle-info"></i> Info Toast</button>
-            <button class="btn btn-warning btn-sm" id="demo-toast-warning"><i class="fa-solid fa-triangle-exclamation"></i> Warning Toast</button>
-            <button class="btn btn-danger btn-sm" id="demo-toast-error"><i class="fa-solid fa-circle-xmark"></i> Error Toast</button>
-          </div>
-        </div>
-
-        <!-- Skeleton Loading State Toggle -->
-        <div class="demo-card">
-          <div class="demo-card-header">
-            <i class="fa-solid fa-spinner icon-accent"></i>
-            <h3>Skeleton Shimmer Loading States</h3>
-          </div>
-          <p>Preview zero-layout-shift shimmer placeholders for network latency.</p>
-          <div class="demo-btn-group">
-            <button class="btn btn-secondary btn-sm" id="demo-toggle-skeleton"><i class="fa-solid fa-arrows-rotate"></i> Toggle Skeletons On/Off</button>
-          </div>
-          <div id="demo-skeleton-container" class="demo-preview-box">
-            <div class="skeleton-card">
-              <div class="skeleton-image shimmer"></div>
-              <div class="skeleton-body">
-                <div class="skeleton-title shimmer"></div>
-                <div class="skeleton-text shimmer"></div>
-                <div class="skeleton-text shimmer" style="width: 60%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Gamification & Achievement Badges -->
-        <div class="demo-card">
-          <div class="demo-card-header">
-            <i class="fa-solid fa-trophy icon-accent"></i>
-            <h3>Gamification Badges & Rank System</h3>
-          </div>
-          <p>Multi-tier sustainability rewards driving donor & volunteer retention.</p>
-          <div class="badges-row" style="display: flex; gap: 12px; margin-top: 10px;">
-            <div class="badge-item active-badge">
-              <i class="fa-solid fa-seedling" style="color: #CD7F32; font-size: 1.5rem;"></i>
-              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Bronze</span>
-            </div>
-            <div class="badge-item active-badge">
-              <i class="fa-solid fa-medal" style="color: #94A3B8; font-size: 1.5rem;"></i>
-              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Silver</span>
-            </div>
-            <div class="badge-item active-badge">
-              <i class="fa-solid fa-award" style="color: #F59E0B; font-size: 1.5rem;"></i>
-              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Gold</span>
-            </div>
-            <div class="badge-item active-badge">
-              <i class="fa-solid fa-crown" style="color: #10B981; font-size: 1.5rem;"></i>
-              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Hero</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Color System Tokens -->
-        <div class="demo-card">
-          <div class="demo-card-header">
-            <i class="fa-solid fa-palette icon-accent"></i>
-            <h3>Brand Palette & Design Tokens</h3>
-          </div>
-          <p>Sophisticated emerald and forest palette tuned for light and dark themes.</p>
-          <div class="swatches-grid">
-            <div class="swatch-item" style="background: #0F5132; color: #fff;"><span>Forest #0F5132</span></div>
-            <div class="swatch-item" style="background: #10B981; color: #fff;"><span>Emerald #10B981</span></div>
-            <div class="swatch-item" style="background: #F59E0B; color: #000;"><span>Amber #F59E0B</span></div>
-            <div class="swatch-item" style="background: #0F172A; color: #fff;"><span>Slate #0F172A</span></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
   </main>
 
   <!-- RATING & REVIEW DIALOG MODAL -->
@@ -1031,7 +938,6 @@
           <li><a href="#" onclick="showSection('browse'); return false;">Browse Food</a></li>
           <li><a href="#how-it-works-section" onclick="showSection('landing'); document.getElementById('how-it-works-section')?.scrollIntoView({behavior:'smooth'}); return false;">How It Works</a></li>
           <li><a href="#impact-section" onclick="showSection('landing'); document.getElementById('impact-section')?.scrollIntoView({behavior:'smooth'}); return false;">Impact Metrics</a></li>
-          <li><a href="#" onclick="showSection('ui-demo'); return false;">UI Showcase</a></li>
         </ul>
       </div>
 
