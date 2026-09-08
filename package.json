@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A web application that connects food donors with food receivers to reduce food waste.",
   "private": true,
+  "main": "index.js",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
