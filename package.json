@@ -18,7 +18,7 @@
     "start": "npm run backend:start",
     "dev": "npm run backend:dev",
     "build": "npm run build:frontend",
-    "build:frontend": "echo \"Frontend is static for Vercel deployment; no build step required.\"",
+    "build:frontend": "node -e \"const fs = require('fs'); fs.cpSync('frontend/public', 'public', { recursive: true }); console.log('Static frontend synced to root public/ directory.');\"",
     "build:backend": "echo \"Backend is deployed as Vercel serverless functions.\"",
     "vercel-build": "npm run build"
   },

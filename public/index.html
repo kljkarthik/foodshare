@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Food Share - Connecting food donors with receivers to reduce food waste and feed communities.">
+  <title>Food Share | Reduce Food Waste, Connect Communities</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Leaflet Maps CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Leaflet Routing Machine CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Notification / Banner -->
+  <div class="notification-bar" id="notification-bar">
+    <span class="notification-text" id="notification-text">Welcome to Food Share! Help us make a difference.</span>
+    <button class="notification-close" id="notification-close" aria-label="Close message"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="header">
+    <div class="header-container">
+      <a href="#" class="logo" id="nav-logo">
+        <i class="fa-solid fa-hand-holding-heart logo-icon"></i>
+        <span class="logo-text">Food<span class="logo-accent">Share</span></span>
+      </a>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <nav class="navbar" id="navbar">
+        <ul class="nav-list">
+          <li><a href="#" class="nav-link active" id="nav-home">Home</a></li>
+          <li><a href="#" class="nav-link" id="nav-browse">Browse Food</a></li>
+          <!-- Donor Only Link -->
+          <li class="donor-only hidden"><a href="#" class="nav-link" id="nav-donate">Share Food</a></li>
+          <!-- Receiver Only Link -->
+          <li class="receiver-only hidden"><a href="#" class="nav-link" id="nav-reservations">My Reservations</a></li>
+          <!-- Admin Only Link -->
+          <li class="admin-only hidden"><a href="#" class="nav-link" id="nav-admin">Admin Dashboard</a></li>
+          <!-- Theme Toggle Button -->
+          <li>
+            <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme">
+              <i class="fa-solid fa-moon"></i>
+            </button>
+          </li>
+          <!-- Guest Links -->
+          <li class="guest-only"><a href="#" class="nav-link btn-login" id="nav-login">Sign In</a></li>
+          <li class="guest-only"><a href="#" class="nav-btn" id="nav-register">Join Now</a></li>
+          <!-- Auth Links -->
+          <li class="auth-only hidden user-profile-dropdown">
+            <span class="user-badge" id="user-badge"><i class="fa-solid fa-user"></i> <span id="user-display-name">Username</span></span>
+          </li>
+          <li class="auth-only hidden"><a href="#" class="nav-link-signout" id="nav-logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- LANDING HERO SECTION -->
+    <section id="landing-hero" class="hero-section">
+      <div class="hero-container">
+        <div class="hero-content">
+          <div class="hero-badge"><i class="fa-solid fa-leaf"></i> Join the Zero Waste Movement</div>
+          <h1 class="hero-title">Share Surplus Food. <br>Feed Your Community.</h1>
+          <p class="hero-subtitle">Food Share connects local businesses and individuals who have excess fresh food with neighbors and organizations in need. Simple, direct, and zero waste.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-large" id="hero-btn-browse"><i class="fa-solid fa-magnifying-glass"></i> Find Food Near You</button>
+            <button class="btn btn-secondary btn-large" id="hero-btn-donate"><i class="fa-solid fa-plus"></i> Share Your Leftovers</button>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-item">
+              <span class="stat-number">10K+</span>
+              <span class="stat-label">Pounds Shared</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">5K+</span>
+              <span class="stat-label">Meals Claimed</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">12t</span>
+              <span class="stat-label">CO2 Saved</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Impact Calculator -->
+          <div class="calculator-card">
+            <h4><i class="fa-solid fa-calculator icon-accent"></i> Calculate Your Impact</h4>
+            <p class="calc-text">If you share <span id="calc-meals-val">10</span> meals a week, you save:</p>
+            <div class="calc-slider-wrapper">
+              <input type="range" id="calc-slider" min="1" max="100" value="10" class="calc-slider">
+            </div>
+            <div class="calc-results">
+              <div class="calc-result-item">
+                <i class="fa-solid fa-droplet icon-water"></i>
+                <div>
+                  <span id="calc-water">3,000</span>
+                  <p>Gallons of Water</p>
+                </div>
+              </div>
+              <div class="calc-result-item">
+                <i class="fa-solid fa-leaf icon-co2"></i>
+                <div>
+                  <span id="calc-co2">25</span>
+                  <p>lbs of CO2</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <!-- Premium UI mockup or abstract card stacks -->
+          <div class="card-mockup-stack">
+            <div class="mockup-card card-1">
+              <div class="mockup-header">
+                <span class="tag tag-vegan">Vegan</span>
+                <span class="status status-available">Available</span>
+              </div>
+              <h4>Organic Fruit Basket</h4>
+              <p><i class="fa-solid fa-location-dot"></i> Downtown Green Market</p>
+              <div class="mockup-footer">
+                <span><i class="fa-solid fa-clock"></i> Expires in 2h</span>
+              </div>
+            </div>
+            <div class="mockup-card card-2">
+              <div class="mockup-header">
+                <span class="tag tag-gf">Gluten-Free</span>
+                <span class="status status-reserved">Reserved</span>
+              </div>
+              <h4>Surplus Bakery Muffins</h4>
+              <p><i class="fa-solid fa-location-dot"></i> Baker's Oven</p>
+              <div class="mockup-footer">
+                <span><i class="fa-solid fa-check"></i> Code: FH982A</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTHENTICATION SECTION (Login & Signup) -->
+    <section id="auth-section" class="auth-section container hidden">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login-btn">Login</button>
+          <button class="auth-tab" id="tab-signup-btn">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form">
+          <h2 class="form-title">Welcome Back</h2>
+          <p class="form-subtitle">Login to list food or check active reservations.</p>
+          <div class="form-group">
+            <label for="login-email">Email Address</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" id="login-email" required placeholder="name@example.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+
+        <!-- Signup Form -->
+        <form id="signup-form" class="auth-form hidden">
+          <h2 class="form-title">Create Account</h2>
+          <p class="form-subtitle">Choose your role and help reduce food waste today.</p>
+          
+          <div class="form-group">
+            <label>Select User Role</label>
+            <div class="role-selector">
+              <input type="radio" name="signup-role" value="donor" id="role-donor" checked class="hidden-radio">
+              <label class="role-option active" id="role-donor-label" for="role-donor">
+                <i class="fa-solid fa-hand-holding-heart role-icon"></i>
+                <div class="role-info">
+                  <strong>Food Donor</strong>
+                  <span>Businesses or individuals with excess food</span>
+                </div>
+              </label>
+              
+              <input type="radio" name="signup-role" value="receiver" id="role-receiver" class="hidden-radio">
+              <label class="role-option" id="role-receiver-label" for="role-receiver">
+                <i class="fa-solid fa-utensils role-icon"></i>
+                <div class="role-info">
+                  <strong>Food Receiver</strong>
+                  <span>Individuals, shelters, or community kitchens</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-username">Name / Organization Name</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input type="text" id="signup-username" required placeholder="e.g. Green Bakery or Sarah Doe">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email Address</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" id="signup-email" required placeholder="contact@example.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="signup-phone">Phone Number (Required for pickup coordination)</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-phone input-icon"></i>
+              <input type="tel" id="signup-phone" required placeholder="e.g. +1 555-0199">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="signup-password" required placeholder="Minimum 6 characters">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- BROWSE FEED SECTION (Receiver View) -->
+    <section id="browse-section" class="browse-section container hidden">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Available Food Listings</h2>
+          <p class="section-subtitle">Claim items in your area before they expire.</p>
+        </div>
+        <div class="active-filters-summary" id="active-filters-summary">
+          <!-- JS injected -->
+        </div>
+      </div>
+
+      <div class="filters-container">
+        <div class="search-box autocomplete-wrapper" style="position: relative; display: flex; align-items: center; width: 100%;">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="filter-search" placeholder="Search by title, location, description..." autocomplete="off" style="padding-right: 100px; width: 100%;">
+          <button id="btn-locate-me" class="btn btn-secondary btn-sm" style="position: absolute; right: 8px; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem;" title="Locate Me"><i class="fa-solid fa-crosshairs"></i> Locate Me</button>
+          <div id="filter-search-dropdown" class="autocomplete-dropdown hidden"></div>
+        </div>
+        <div class="filter-actions">
+          <div class="tags-selector" id="tags-selector">
+            <button class="tag-filter-btn" data-tag="Vegan">Vegan</button>
+            <button class="tag-filter-btn" data-tag="Vegetarian">Vegetarian</button>
+            <button class="tag-filter-btn" data-tag="Gluten-Free">Gluten-Free</button>
+            <button class="tag-filter-btn" data-tag="Contains Nuts">Contains Nuts</button>
+          </div>
+          <select id="filter-status" class="filter-select">
+            <option value="available">Status: Available</option>
+            <option value="reserved">Status: Reserved</option>
+            <option value="claimed">Status: Claimed</option>
+            <option value="all">Status: All</option>
+          </select>
+          <select id="filter-category" class="filter-select">
+            <option value="all">All Categories</option>
+            <option value="Cooked Meals">Cooked Meals</option>
+            <option value="Bakery & Bread">Bakery & Bread</option>
+            <option value="Fruits & Vegetables">Fruits & Vegetables</option>
+            <option value="Dairy & Eggs">Dairy & Eggs</option>
+            <option value="Packaged & Canned">Packaged & Canned</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Meat & Seafood">Meat & Seafood</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="btn btn-secondary" id="btn-clear-filters"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+      </div>
+
+      <!-- Leaflet Map Container -->
+      <div id="map-view" style="height: 350px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 24px; box-shadow: var(--shadow-sm); z-index: 10;"></div>
+
+      <!-- Feed Grid -->
+      <div class="listings-grid" id="listings-grid">
+        <!-- JS Injected Listing Cards -->
+        <div class="loading-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading food listings...</div>
+      </div>
+    </section>
+
+    <!-- DONOR DASHBOARD SECTION -->
+    <section id="donor-section" class="donor-section container hidden">
+      <div class="dashboard-grid">
+        <!-- Left Side: Create Listing -->
+        <div class="dashboard-card">
+          <h2 class="card-title"><i class="fa-solid fa-circle-plus icon-accent"></i> Create Food Listing</h2>
+          <p class="card-subtitle">List excess food with clear pickup instructions.</p>
+          <form id="create-listing-form">
+            <div class="form-group">
+              <label for="listing-title">Listing Title</label>
+              <input type="text" id="listing-title" required placeholder="e.g. 5x Surplus Vegetable Paninis">
+            </div>
+            
+            <div class="form-group">
+              <label for="listing-category">Food Category</label>
+              <select id="listing-category" style="width: 100%; outline: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; background-color: var(--surface); color: var(--dark); transition: var(--transition);">
+                <option value="Cooked Meals">Cooked Meals</option>
+                <option value="Bakery & Bread">Bakery & Bread</option>
+                <option value="Fruits & Vegetables">Fruits & Vegetables</option>
+                <option value="Dairy & Eggs">Dairy & Eggs</option>
+                <option value="Packaged & Canned">Packaged & Canned</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Meat & Seafood">Meat & Seafood</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="listing-quantity">Quantity</label>
+                <input type="text" id="listing-quantity" required placeholder="e.g. 3 boxes, 2 kg">
+              </div>
+              <div class="form-group">
+                <label for="listing-expiry">Expiry Time</label>
+                <input type="datetime-local" id="listing-expiry" required>
+              </div>
+            </div>
+
+            <div class="form-group autocomplete-wrapper">
+              <label for="listing-location">Pickup Location (Address)</label>
+              <div class="input-icon-wrapper">
+                <i class="fa-solid fa-location-dot input-icon"></i>
+                <input type="text" id="listing-location" required placeholder="e.g. Gateway of India, Colaba, Mumbai" autocomplete="off">
+              </div>
+              <div id="listing-location-dropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+
+            <!-- Create Listing interactive picker map -->
+            <div class="form-group">
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Pinpoint Pickup Location (Click map or type address to search)</label>
+              <div id="listing-picker-map" style="height: 180px; border-radius: var(--radius-sm); border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 10;"></div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="listing-latitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Latitude (Auto-calculated)</label>
+                <input type="number" step="any" id="listing-latitude" placeholder="e.g. 19.0760" value="19.0760" readonly style="background-color: var(--primary-light); cursor: not-allowed;">
+              </div>
+              <div class="form-group">
+                <label for="listing-longitude" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Longitude (Auto-calculated)</label>
+                <input type="number" step="any" id="listing-longitude" placeholder="e.g. 72.8777" value="72.8777" readonly style="background-color: var(--primary-light); cursor: not-allowed;">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="listing-pickup-start">Pickup Window Start</label>
+                <input type="datetime-local" id="listing-pickup-start" required>
+              </div>
+              <div class="form-group">
+                <label for="listing-pickup-end">Pickup Window End</label>
+                <input type="datetime-local" id="listing-pickup-end" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="listing-description">Description & Ingredients</label>
+              <textarea id="listing-description" rows="3" placeholder="Provide details like: prepared last night, keep refrigerated, contains wheat/dairy."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Dietary & Allergen Tags</label>
+              <div class="tags-checkbox-grid">
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Vegan"> Vegan
+                </label>
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Vegetarian"> Vegetarian
+                </label>
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Gluten-Free"> Gluten-Free
+                </label>
+                <label class="tag-checkbox-label">
+                  <input type="checkbox" name="listing-tags" value="Contains Nuts"> Contains Nuts
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="listing-image-file">Upload Food Image (Optional)</label>
+              <div class="input-icon-wrapper">
+                <i class="fa-solid fa-image input-icon"></i>
+                <input type="file" id="listing-image-file" accept="image/*" style="padding-left: 48px;">
+              </div>
+              <div id="image-preview-container" class="image-preview-container hidden">
+                <img id="image-preview" src="" alt="Image preview">
+                <button type="button" id="btn-remove-image" class="btn-remove-image"><i class="fa-solid fa-trash"></i> Remove</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full"><i class="fa-solid fa-check"></i> Post Food Listing</button>
+          </form>
+        </div>
+
+        <!-- Right Side: Active Listings and Claims -->
+        <div class="dashboard-panel">
+          <!-- CSR Impact Dashboard Card -->
+          <div class="dashboard-card" style="margin-bottom: 20px;">
+            <h2 class="card-title"><i class="fa-solid fa-chart-line icon-accent"></i> My CSR Environmental Stats</h2>
+            <p class="card-subtitle">Track carbon footprint savings and meals distributed.</p>
+            <div class="calc-results" style="margin-bottom: 20px; grid-template-columns: repeat(3, 1fr); gap: 10px; display: grid;">
+              <div class="calc-result-item" style="padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; justify-content: center; height: 60px;">
+                <div>
+                  <span id="donor-stats-meals" style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">0</span>
+                  <p style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase;">Meals Saved</p>
+                </div>
+              </div>
+              <div class="calc-result-item" style="padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; justify-content: center; height: 60px;">
+                <div>
+                  <span id="donor-stats-water" style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">0</span>
+                  <p style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase;">Gal Water</p>
+                </div>
+              </div>
+              <div class="calc-result-item" style="padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; justify-content: center; height: 60px;">
+                <div>
+                  <span id="donor-stats-co2" style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">0</span>
+                  <p style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase;">Lbs CO2</p>
+                </div>
+              </div>
+            </div>
+            <div style="height: 180px; position: relative;">
+              <canvas id="donor-csr-chart" style="width: 100%; height: 100%;"></canvas>
+            </div>
+            <button class="btn btn-secondary btn-sm btn-full" id="btn-export-certificate" style="margin-top: 12px;"><i class="fa-solid fa-award"></i> Generate Green Partner Certificate</button>
+          </div>
+
+          <div class="dashboard-card">
+            <h2 class="card-title"><i class="fa-solid fa-list-check icon-accent"></i> My Active Listings</h2>
+            <p class="card-subtitle">Manage listings you have shared.</p>
+            <div class="donor-listings-list" id="donor-listings-list">
+              <!-- JS Injected listings -->
+              <p class="empty-state">No listings posted yet. Share your first leftovers using the form on the left.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-handshake-angle icon-accent"></i> Incoming Reservations</h2>
+            <p class="card-subtitle">Validate claim codes when receivers arrive for pickup.</p>
+            <div class="donor-reservations-list" id="donor-reservations-list">
+              <!-- JS Injected reservation codes -->
+              <p class="empty-state">No reservations pending. Once a receiver claims your food, they will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECEIVER DASHBOARD SECTION -->
+    <section id="receiver-dashboard" class="receiver-dashboard container hidden">
+      <h2 class="section-title">My Claims & Reservations</h2>
+      <p class="section-subtitle">Present the reservation code to the donor during the pickup window.</p>
+      
+      <div class="dashboard-grid" style="margin-top: 24px;">
+        <!-- Left Column: Active Reservations -->
+        <div class="receiver-reservations-grid" id="receiver-reservations-grid">
+          <div class="empty-state-container">
+            <i class="fa-solid fa-utensils empty-state-icon"></i>
+            <p>You have no active food reservations.</p>
+            <button class="btn btn-primary" onclick="showSection('browse')">Browse Available Food</button>
+          </div>
+        </div>
+
+        <!-- Right Column: Rank XP and NGO Verification -->
+        <div class="dashboard-panel">
+          <div class="dashboard-card">
+            <h2 class="card-title"><i class="fa-solid fa-award icon-accent"></i> Rescuer Rank & XP</h2>
+            <p class="card-subtitle">Earn 50 XP for every surplus meal claim completed.</p>
+            <div class="volunteer-xp-card" style="background-color: var(--primary-trans); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-md); text-align: center; margin-top: 12px; position: relative; overflow: hidden; margin-bottom: 20px;">
+              <h5 style="margin-bottom: 4px; font-size: 0.8rem; text-transform: uppercase; color: var(--primary); letter-spacing: 0.05em;"><i class="fa-solid fa-trophy"></i> Total XP</h5>
+              <p style="font-size: 2.2rem; font-weight: 800; color: var(--primary); margin: 6px 0;"><span id="user-xp-display">0</span> XP</p>
+              <div class="xp-progress-bar-container" style="background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px;">
+                <div id="xp-progress-bar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; height: 100%; transition: width 0.5s ease-in-out;"></div>
+              </div>
+              <p id="xp-next-level" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Loading levels...</p>
+            </div>
+
+            <!-- Gamified Badges Showcase -->
+            <h4 style="font-size: 0.9rem; margin-bottom: 12px; font-family: var(--font-headings); font-weight: 700; color: var(--dark); border-top: 1px solid var(--border); padding-top: 16px;"><i class="fa-solid fa-medal"></i> My Achievements</h4>
+            <div class="achievements-badges-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
+              <div class="badge-item locked" id="badge-bronze" title="Bronze Spoon: Unlocks at 50 XP (1 Claim)">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-utensils"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Bronze</span>
+              </div>
+              <div class="badge-item locked" id="badge-silver" title="Silver Fork: Unlocks at 150 XP (3 Claims)">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-utensil-spoon"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Silver</span>
+              </div>
+              <div class="badge-item locked" id="badge-gold" title="Gold Plate: Unlocks at 250 XP (5 Claims)">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-plate-wheat"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Gold</span>
+              </div>
+              <div class="badge-item locked" id="badge-hero" title="Zero Waste Hero: Unlocks at 500+ XP">
+                <div class="badge-icon-wrap" style="width: 48px; height: 48px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; position: relative; font-size: 1.2rem; transition: var(--transition);"><i class="fa-solid fa-shield-halved"></i></div>
+                <span style="font-size: 0.65rem; display: block; font-weight: 600;">Hero</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-trophy icon-accent"></i> Rescuer Leaderboard</h2>
+            <p class="card-subtitle">Top local food rescuers by XP.</p>
+            <div id="leaderboard-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <!-- JS Injected leaderboard rows -->
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top" id="ngo-verification-panel">
+            <h2 class="card-title"><i class="fa-solid fa-shield-halved icon-accent"></i> NGO Verification</h2>
+            <p class="card-subtitle">Verify status to unlock wholesale food claims.</p>
+            <form id="ngo-verify-form" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="ngo-doc-file" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Select Tax-Exempt Document</label>
+                <input type="file" id="ngo-doc-file" accept=".pdf,.doc,.docx,image/*" required style="font-size: 0.8rem; border: 1px solid var(--border); width: 100%; padding: 8px; border-radius: var(--radius-sm); background-color: var(--surface);">
+              </div>
+              <button type="submit" class="btn btn-secondary btn-full">Submit Verification</button>
+            </form>
+            <div id="ngo-verification-status" style="margin-top: 10px; font-size: 0.8rem; font-weight: 700; color: var(--primary);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN PANEL CONTROL PANEL SECTION -->
+    <section id="admin-section" class="dashboard-section hidden">
+      <div class="dashboard-container">
+        <!-- Sidebar / Statistics Summary -->
+        <div class="dashboard-sidebar">
+          <div class="dashboard-profile-card">
+            <div class="profile-avatar"><i class="fa-solid fa-user-shield"></i></div>
+            <h3 class="profile-name">Admin Console</h3>
+            <p class="profile-role">System Administrator</p>
+          </div>
+          
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-chart-line icon-accent"></i> Platform Stats</h2>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <span>Total Accounts:</span>
+                <strong id="admin-stat-users">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                <span>Active Listings:</span>
+                <strong id="admin-stat-listings">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding-bottom: 6px;">
+                <span>Claimed Rescues:</span>
+                <strong id="admin-stat-claims">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-chart-pie icon-accent"></i> User Roles Distribution</h2>
+            <div style="margin-top: 12px; height: 160px; position: relative;">
+              <canvas id="admin-roles-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-chart-column icon-accent"></i> Listing Status</h2>
+            <div style="margin-top: 12px; height: 160px; position: relative;">
+              <canvas id="admin-listings-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Pending NGO Document Verification approvals -->
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-file-signature icon-accent"></i> NGO Approvals</h2>
+            <p class="card-subtitle">Verify tax-exempt registrations.</p>
+            <div id="admin-pending-verification-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <p class="empty-state">No pending documents to verify.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="dashboard-content">
+          <!-- Add/Edit User Card -->
+          <div class="dashboard-card">
+            <h2 class="card-title" id="admin-form-title"><i class="fa-solid fa-user-plus icon-accent"></i> Add New Profile</h2>
+            <p class="card-subtitle" id="admin-form-subtitle">Create a new donor or receiver profile manually.</p>
+            
+            <form id="admin-user-form" style="margin-top: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+              <input type="hidden" id="admin-user-id">
+              
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-username">Username / Organization</label>
+                <input type="text" id="admin-user-username" required placeholder="e.g. Bandra Bakery">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-email">Email Address</label>
+                <input type="email" id="admin-user-email" required placeholder="name@example.com">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-phone">Phone Number</label>
+                <input type="text" id="admin-user-phone" placeholder="+91 XXXXX XXXXX">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="admin-user-role">User Role</label>
+                <select id="admin-user-role" class="filter-select" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px;">
+                  <option value="donor">Donor (Restaurant/Retail)</option>
+                  <option value="receiver">Receiver (NGO/Kitchen)</option>
+                  <option value="admin">Administrator</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0; grid-column: span 2;" id="admin-password-group">
+                <label for="admin-user-password">Password</label>
+                <input type="password" id="admin-user-password" placeholder="••••••••" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px;">
+              </div>
+              
+              <div style="grid-column: span 2; display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" id="btn-admin-cancel-edit" style="display: none;" onclick="cancelAdminUserEdit()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btn-admin-submit-user">Save Profile</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Users Table List -->
+          <div class="dashboard-card margin-top">
+            <h2 class="card-title"><i class="fa-solid fa-users icon-accent"></i> Registered Profiles</h2>
+            <p class="card-subtitle">Manage all donor and receiver credentials.</p>
+            
+            <div style="overflow-x: auto; margin-top: 15px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background-color: var(--light); border-bottom: 1px solid var(--border);">
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Name</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Email</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Phone</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted);">Role</th>
+                    <th style="padding: 10px; font-weight: 700; color: var(--text-muted); text-align: right; width: 140px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-table-body">
+                  <!-- JS Dynamic table rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- RATING & REVIEW DIALOG MODAL -->
+  <dialog class="modal" id="rating-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Rate Your Food Pickup</h3>
+        <button class="modal-close" id="modal-close-rating-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="rating-form">
+          <input type="hidden" id="rating-reservation-id">
+          <p style="font-size: 0.85rem; color: var(--text-muted);">How was the quality and pickup coordination of this food share?</p>
+          <div class="form-group margin-top">
+            <label for="rating-select" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Select Rating</label>
+            <select id="rating-select" class="filter-select" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px;">
+              <option value="5">⭐⭐⭐⭐⭐ (5 Stars - Excellent)</option>
+              <option value="4">⭐⭐⭐⭐ (4 Stars - Very Good)</option>
+              <option value="3">⭐⭐⭐ (3 Stars - Good)</option>
+              <option value="2">⭐⭐ (2 Stars - Poor)</option>
+              <option value="1">⭐ (1 Star - Bad / Unsafe)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rating-review" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Review / Comments</label>
+            <textarea id="rating-review" rows="3" placeholder="Provide any comments about packaging, freshness, or coordination..." style="border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; padding: 10px; outline: none;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full margin-top">Submit Feedback</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- CSR CERTIFICATE DIALOG MODAL -->
+  <dialog class="modal" id="certificate-modal">
+    <div class="modal-content" style="max-width: 600px; padding: 40px; border: 8px double var(--primary); text-align: center; background-color: var(--surface);">
+      <div style="text-align: right; margin-top: -20px;">
+        <button class="modal-close" id="modal-close-cert-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <h1 style="font-family: 'Outfit', sans-serif; color: var(--primary); font-size: 2.2rem; margin-bottom: 5px;">GREEN PARTNER</h1>
+      <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px;">CERTIFICATE OF COMMENDATION</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">This certificate is proudly presented to</p>
+      <h2 id="cert-donor-name" style="font-family: 'Outfit', sans-serif; color: var(--dark); font-size: 1.8rem; margin: 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; display: inline-block;">Taj Food Services</h2>
+      <p style="font-size: 0.95rem; line-height: 1.6; color: var(--dark); margin: 20px 0;">
+        for outstanding commitment to environmental sustainability and community care. 
+        Through the **Food Share** initiative, they have actively prevented food waste and fed families in need.
+      </p>
+      <div class="calc-results" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 25px 0;">
+        <div style="border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm);">
+          <span id="cert-meals" style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">0</span>
+          <p style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Meals Saved</p>
+        </div>
+        <div style="border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm);">
+          <span id="cert-water" style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">0</span>
+          <p style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Gal Water</p>
+        </div>
+        <div style="border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm);">
+          <span id="cert-co2" style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">0</span>
+          <p style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Lbs CO2 Avoided</p>
+        </div>
+      </div>
+      <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 20px;">
+        <div style="text-align: left;">
+          <p style="font-size: 0.75rem; font-weight: 700; color: var(--dark);">FOOD SHARE PLATFORM</p>
+          <p style="font-size: 0.65rem; color: var(--text-muted);">Verification Seal</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Certificate</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- LISTING DETAILS DIALOG MODAL -->
+  <dialog class="modal" id="listing-detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Listing Details</h3>
+        <button class="modal-close" id="modal-close-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="modal-body-content">
+        <!-- JS Dynamic Content -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- CLAIM VERIFICATION MODAL -->
+  <dialog class="modal" id="claim-verification-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Complete Food Pickup</h3>
+        <button class="modal-close" id="modal-close-claim-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="claim-verification-form">
+          <p>Enter the 6-character Reservation Code to complete this claim and mark the food as picked up.</p>
+          <div class="form-group margin-top">
+            <label for="claim-code-input">6-Digit Code</label>
+            <input type="text" id="claim-code-input" class="claim-code-field" maxlength="6" required placeholder="XXXXXX" autocomplete="off">
+          </div>
+          <input type="hidden" id="claim-listing-id">
+          <button type="submit" class="btn btn-primary btn-full margin-top">Confirm Pickup</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="logo-text"><i class="fa-solid fa-hand-holding-heart"></i> Food<span class="logo-accent">Share</span></span>
+        <p>Connecting surplus food with community hunger. Built for a sustainable future.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="#" onclick="showSection('landing')">Home</a></li>
+          <li><a href="#" onclick="showSection('browse')">Browse Food</a></li>
+          <li><a href="#" onclick="showSection('auth')">Sign In</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Food Share. Project built using Vanilla Frontend + REST Backend.</p>
+    </div>
+  </footer>
+
+  <!-- IN-APP COORDINATION CHAT MODAL -->
+  <dialog class="modal" id="chat-modal">
+    <div class="modal-content" style="max-height: 520px; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-comments icon-accent"></i> Coordination Chat</h3>
+        <button class="modal-close" id="modal-close-chat-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; padding: 16px;">
+        <div id="chat-messages-container" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--light); height: 280px;">
+          <p class="empty-state">No messages yet. Send a note to coordinate pickup details!</p>
+        </div>
+        <form id="chat-send-form" style="display: flex; gap: 8px;">
+          <input type="hidden" id="chat-listing-id">
+          <input type="text" id="chat-message-input" required placeholder="Type coordination note..." style="flex-grow: 1; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; outline: none; background: var(--surface); color: var(--dark);">
+          <button type="submit" class="btn btn-primary" style="padding: 8px 16px;"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ADMIN NGO VERIFICATION DOCUMENT LIGHTBOX MODAL -->
+  <dialog class="modal" id="admin-doc-modal">
+    <div class="modal-content" style="max-width: 650px; padding: 20px;">
+      <div class="modal-header">
+        <h3>NGO Tax-Exempt Document Preview</h3>
+        <button class="modal-close" onclick="document.getElementById('admin-doc-modal').close()" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="text-align: center; max-height: 480px; overflow-y: auto; padding: 15px 0;">
+        <img id="admin-doc-preview-image" src="" alt="NGO Verification Document" onerror="this.style.display='none'; document.getElementById('admin-doc-preview-fallback').style.display='block'; document.getElementById('admin-doc-preview-fallback').innerText='Could not render document visual preview (file not found on server).';" style="max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);">
+        <p id="admin-doc-preview-fallback" class="empty-state" style="display: none; padding: 20px; font-weight: 700; color: var(--error);">Could not render document visual preview.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Custom JavaScript -->
+  <script src="js/app.js?v=2.3"></script>
+</body>
+</html>
