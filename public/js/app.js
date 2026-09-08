@@ -130,17 +130,21 @@ function showSection(sectionId) {
   document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
 
   // Show target section & highlight active link
+  let activeContainer = null;
   if (sectionId === 'landing') {
     if (heroEl) heroEl.classList.remove('hidden');
     if (howWorksEl) howWorksEl.classList.remove('hidden');
     if (impactEl) impactEl.classList.remove('hidden');
+    activeContainer = heroEl;
     document.getElementById('nav-home')?.classList.add('active');
     if (typeof setupScrollAnimations === 'function') setupScrollAnimations();
     if (typeof animateCounters === 'function') animateCounters();
   } else if (sectionId === 'auth') {
     if (authEl) authEl.classList.remove('hidden');
+    activeContainer = authEl;
   } else if (sectionId === 'browse') {
     if (browseEl) browseEl.classList.remove('hidden');
+    activeContainer = browseEl;
     document.getElementById('nav-browse')?.classList.add('active');
     loadListings();
   } else if (sectionId === 'donor') {
@@ -149,6 +153,7 @@ function showSection(sectionId) {
       return;
     }
     if (donorEl) donorEl.classList.remove('hidden');
+    activeContainer = donorEl;
     document.getElementById('nav-donate')?.classList.add('active');
     loadDonorDashboard();
   } else if (sectionId === 'receiver') {
@@ -157,6 +162,7 @@ function showSection(sectionId) {
       return;
     }
     if (receiverEl) receiverEl.classList.remove('hidden');
+    activeContainer = receiverEl;
     document.getElementById('nav-reservations')?.classList.add('active');
     loadReceiverReservations();
   } else if (sectionId === 'admin') {
@@ -165,8 +171,15 @@ function showSection(sectionId) {
       return;
     }
     if (adminEl) adminEl.classList.remove('hidden');
+    activeContainer = adminEl;
     document.getElementById('nav-admin')?.classList.add('active');
     loadAdminDashboard();
+  }
+
+  if (activeContainer) {
+    activeContainer.classList.remove('page-enter-active');
+    void activeContainer.offsetWidth; // trigger reflow
+    activeContainer.classList.add('page-enter-active');
   }
 
   // Close mobile navigation drawer if open
@@ -2305,4 +2318,161 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   setupScrollAnimations();
+});
+
+
+// ==========================================================================
+// CINEMATIC MOTION & INTERACTION ENGINE
+// ==========================================================================
+
+// 1. Mouse Parallax on Hero Visual Stage (Desktop only with rAF lerping)
+function initHeroParallax() {
+  const stage = document.getElementById('hero-parallax-stage') || document.querySelector('.hero-section');
+  const layers = document.querySelectorAll('.parallax-layer');
+  if (!stage || layers.length === 0) return;
+
+  // Respect reduced motion & touch devices
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (isTouch || prefersReduced) return;
+
+  let targetX = 0;
+  let targetY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let rafId = null;
+
+  function updateParallax() {
+    // Smooth linear interpolation (lerp)
+    currentX += (targetX - currentX) * 0.08;
+    currentY += (targetY - currentY) * 0.08;
+
+    layers.forEach(layer => {
+      const depth = parseFloat(layer.getAttribute('data-parallax-depth')) || 10;
+      const moveX = (currentX * depth).toFixed(2);
+      const moveY = (currentY * depth).toFixed(2);
+      layer.style.setProperty('--px', `${moveX}px`);
+      layer.style.setProperty('--py', `${moveY}px`);
+      layer.style.transform = `translate3d(${moveX}px, ${moveY}px, 0)`;
+    });
+
+    if (Math.abs(targetX - currentX) > 0.001 || Math.abs(targetY - currentY) > 0.001) {
+      rafId = requestAnimationFrame(updateParallax);
+    } else {
+      rafId = null;
+    }
+  }
+
+  stage.addEventListener('pointermove', (e) => {
+    const rect = stage.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    targetX = (e.clientX - centerX) / (rect.width / 2);
+    targetY = (e.clientY - centerY) / (rect.height / 2);
+
+    // Clamp values between -1 and 1
+    targetX = Math.max(-1, Math.min(1, targetX));
+    targetY = Math.max(-1, Math.min(1, targetY));
+
+    if (!rafId) {
+      rafId = requestAnimationFrame(updateParallax);
+    }
+  });
+
+  stage.addEventListener('pointerleave', () => {
+    targetX = 0;
+    targetY = 0;
+    if (!rafId) {
+      rafId = requestAnimationFrame(updateParallax);
+    }
+  });
+}
+
+// 2. Subtle 3D Tilt for Interactive Cards
+function initCardTilt() {
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (prefersReduced || isTouch) return;
+
+  document.addEventListener('pointermove', (e) => {
+    const card = e.target.closest('.tilt-card, .listing-card');
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    // Bounded tilt angle: max 2.5 degrees
+    const rotateY = ((x - centerX) / centerX * 2.5).toFixed(2);
+    const rotateX = (-(y - centerY) / centerY * 2.5).toFixed(2);
+
+    card.style.setProperty('--tilt-x', `${rotateX}deg`);
+    card.style.setProperty('--tilt-y', `${rotateY}deg`);
+  });
+
+  document.addEventListener('pointerout', (e) => {
+    const card = e.target.closest('.tilt-card, .listing-card');
+    if (card && !card.contains(e.relatedTarget)) {
+      card.style.setProperty('--tilt-x', '0deg');
+      card.style.setProperty('--tilt-y', '0deg');
+    }
+  });
+}
+
+// 3. Magnetic Button Micro-interactions
+function initMagneticButtons() {
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (prefersReduced || isTouch) return;
+
+  const buttons = document.querySelectorAll('.btn-magnetic, .btn-primary, .btn-secondary, .nav-btn');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('pointermove', (e) => {
+      const rect = btn.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+
+      // Magnetic pull: max 5px
+      const magX = (x * 0.18).toFixed(2);
+      const magY = (y * 0.18).toFixed(2);
+
+      btn.style.setProperty('--mag-x', `${magX}px`);
+      btn.style.setProperty('--mag-y', `${magY}px`);
+    });
+
+    btn.addEventListener('pointerleave', () => {
+      btn.style.setProperty('--mag-x', '0px');
+      btn.style.setProperty('--mag-y', '0px');
+    });
+  });
+}
+
+// 4. Scroll-Driven Navbar Glassmorph State
+function initNavbarScroll() {
+  const header = document.querySelector('.header');
+  if (!header) return;
+
+  const handleScroll = () => {
+    if (window.scrollY > 20) {
+      header.classList.add('scrolled');
+    } else {
+      header.classList.remove('scrolled');
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll();
+}
+
+// Initialize all motion modules on DOM Ready
+document.addEventListener('DOMContentLoaded', () => {
+  initHeroParallax();
+  initCardTilt();
+  initMagneticButtons();
+  initNavbarScroll();
 });

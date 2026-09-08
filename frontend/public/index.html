@@ -77,16 +77,23 @@
   <main>
     <!-- LANDING HERO SECTION -->
     <section id="landing-hero" class="hero-section">
+      <!-- Ambient Background Glow Orbs -->
+      <div class="ambient-orb ambient-orb-1" aria-hidden="true"></div>
+      <div class="ambient-orb ambient-orb-2" aria-hidden="true"></div>
+
       <div class="hero-container">
         <div class="hero-content">
-          <div class="hero-badge"><i class="fa-solid fa-leaf"></i> Join the Zero Waste Movement</div>
-          <h1 class="hero-title">Share Surplus Food. <br>Feed Your Community.</h1>
-          <p class="hero-subtitle">Food Share connects local businesses and individuals who have excess fresh food with neighbors and organizations in need. Simple, direct, and zero waste.</p>
-          <div class="hero-actions">
-            <button class="btn btn-primary btn-large" id="hero-btn-browse"><i class="fa-solid fa-magnifying-glass"></i> Find Food Near You</button>
-            <button class="btn btn-secondary btn-large" id="hero-btn-donate"><i class="fa-solid fa-plus"></i> Share Your Leftovers</button>
+          <div class="hero-badge hero-reveal-1"><i class="fa-solid fa-leaf"></i> Join the Zero Waste Movement</div>
+          <h1 class="hero-title hero-reveal-2">
+            <span class="hero-title-line">Share Surplus Food.</span>
+            <span class="hero-title-line">Feed Your Community.</span>
+          </h1>
+          <p class="hero-subtitle hero-reveal-3">Food Share connects local businesses and individuals who have excess fresh food with neighbors and organizations in need. Simple, direct, and zero waste.</p>
+          <div class="hero-actions hero-reveal-4">
+            <button class="btn btn-primary btn-large btn-magnetic" id="hero-btn-browse"><i class="fa-solid fa-magnifying-glass"></i> Find Food Near You</button>
+            <button class="btn btn-secondary btn-large btn-magnetic" id="hero-btn-donate"><i class="fa-solid fa-plus"></i> Share Your Leftovers</button>
           </div>
-          <div class="hero-stats">
+          <div class="hero-stats hero-reveal-5">
             <div class="stat-item">
               <span class="stat-number">10K+</span>
               <span class="stat-label">Pounds Shared</span>
@@ -102,11 +109,11 @@
           </div>
 
           <!-- Dynamic Impact Calculator -->
-          <div class="calculator-card">
+          <div class="calculator-card hero-reveal-6">
             <h4><i class="fa-solid fa-calculator icon-accent"></i> Calculate Your Impact</h4>
             <p class="calc-text">If you share <span id="calc-meals-val">10</span> meals a week, you save:</p>
             <div class="calc-slider-wrapper">
-              <input type="range" id="calc-slider" min="1" max="100" value="10" class="calc-slider">
+              <input type="range" id="calc-slider" min="1" max="100" value="10" class="calc-slider" aria-label="Calculate meals per week">
             </div>
             <div class="calc-results">
               <div class="calc-result-item">
@@ -126,10 +133,10 @@
             </div>
           </div>
         </div>
-        <div class="hero-visual">
-          <!-- Premium UI mockup or abstract card stacks -->
+        <div class="hero-visual" id="hero-parallax-stage">
+          <!-- Layered Mockup Stack with Parallax & Continuous Floating -->
           <div class="card-mockup-stack">
-            <div class="mockup-card card-1">
+            <div class="mockup-card card-1 float-anim-1 parallax-layer tilt-card" data-parallax-depth="14">
               <div class="mockup-header">
                 <span class="tag tag-vegan">Vegan</span>
                 <span class="status status-available">Available</span>
@@ -138,9 +145,10 @@
               <p><i class="fa-solid fa-location-dot"></i> Downtown Green Market</p>
               <div class="mockup-footer">
                 <span><i class="fa-solid fa-clock"></i> Expires in 2h</span>
+                <span style="font-size: 0.72rem; color: var(--primary-emerald); font-weight: 700;"><i class="fa-solid fa-shield-check"></i> Fresh</span>
               </div>
             </div>
-            <div class="mockup-card card-2">
+            <div class="mockup-card card-2 float-anim-2 parallax-layer tilt-card" data-parallax-depth="7">
               <div class="mockup-header">
                 <span class="tag tag-gf">Gluten-Free</span>
                 <span class="status status-reserved">Reserved</span>
