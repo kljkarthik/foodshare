@@ -47,6 +47,9 @@
         <ul class="nav-list">
           <li><a href="#" class="nav-link active" id="nav-home">Home</a></li>
           <li><a href="#" class="nav-link" id="nav-browse">Browse Food</a></li>
+          <li><a href="#how-it-works-section" class="nav-link" id="nav-how-it-works">How It Works</a></li>
+          <li><a href="#impact-section" class="nav-link" id="nav-impact">Impact</a></li>
+          <li><a href="#ui-demo" class="nav-link" id="nav-ui-demo"><i class="fa-solid fa-sparkles"></i> UI Demo</a></li>
           <!-- Donor Only Link -->
           <li class="donor-only hidden"><a href="#" class="nav-link" id="nav-donate">Share Food</a></li>
           <!-- Receiver Only Link -->
@@ -153,94 +156,237 @@
         </div>
       </div>
     </section>
+    <!-- HOW IT WORKS SECTION -->
+    <section id="how-it-works-section" class="how-it-works-section container reveal-up">
+      <div class="section-header-center">
+        <div class="section-tag"><i class="fa-solid fa-arrows-rotate"></i> Simple 3-Step Process</div>
+        <h2 class="section-title">How FoodShare Works</h2>
+        <p class="section-subtitle">Connecting donors and receivers in real-time to eliminate food waste effortlessly.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card reveal-up">
+          <div class="step-badge">01</div>
+          <div class="step-icon-wrapper">
+            <i class="fa-solid fa-box-archive"></i>
+          </div>
+          <h3>1. List Surplus Food</h3>
+          <p>Donors post surplus food details, quantity, photos, dietary tags, and pickup windows with interactive GPS pin-drop.</p>
+          <div class="step-footer-tag"><i class="fa-solid fa-bolt"></i> Instant Broadcast</div>
+        </div>
+
+        <div class="step-card reveal-up">
+          <div class="step-badge">02</div>
+          <div class="step-icon-wrapper">
+            <i class="fa-solid fa-hand-holding-heart"></i>
+          </div>
+          <h3>2. Match & Reserve</h3>
+          <p>Nearby receivers, shelters, or community members discover fresh listings, reserve in 1 click, and get a secure 6-digit pickup PIN.</p>
+          <div class="step-footer-tag"><i class="fa-solid fa-shield-halved"></i> Verified PIN</div>
+        </div>
+
+        <div class="step-card reveal-up">
+          <div class="step-badge">03</div>
+          <div class="step-icon-wrapper">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+          </div>
+          <h3>3. Pick Up & Divert</h3>
+          <p>Receiver navigates with built-in turn-by-turn routing, completes handoff, and prevents emissions while feeding families.</p>
+          <div class="step-footer-tag"><i class="fa-solid fa-leaf"></i> Zero Waste</div>
+        </div>
+      </div>
+
+      <!-- Interactive Flow Visual Line -->
+      <div class="flow-diagram reveal-up">
+        <div class="flow-track">
+          <div class="flow-track-progress"></div>
+        </div>
+        <div class="flow-nodes">
+          <div class="flow-node active">
+            <div class="flow-node-icon"><i class="fa-solid fa-store"></i></div>
+            <span>Donor Surplus</span>
+          </div>
+          <div class="flow-node active">
+            <div class="flow-node-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+            <span>Real-Time Cloud Match</span>
+          </div>
+          <div class="flow-node active">
+            <div class="flow-node-icon"><i class="fa-solid fa-people-carry-box"></i></div>
+            <span>Verified Pickup</span>
+          </div>
+          <div class="flow-node active">
+            <div class="flow-node-icon"><i class="fa-solid fa-earth-americas"></i></div>
+            <span>CO2 Diverted</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUSTAINABILITY IMPACT SECTION -->
+    <section id="impact-section" class="impact-section container reveal-up">
+      <div class="section-header-center">
+        <div class="section-tag"><i class="fa-solid fa-chart-pie"></i> Real-Time Environmental Impact</div>
+        <h2 class="section-title">Measurable Impact, Every Single Meal</h2>
+        <p class="section-subtitle">Transparent sustainability metrics calculated from verified food diversion.</p>
+      </div>
+
+      <div class="impact-grid">
+        <div class="impact-card">
+          <div class="impact-icon-wrapper impact-meals">
+            <i class="fa-solid fa-bowl-food"></i>
+          </div>
+          <div class="impact-number count-up" data-target="15420">0</div>
+          <div class="impact-label">Meals Saved & Shared</div>
+          <p class="impact-desc">Nutritious meals diverted from disposal to dinner tables.</p>
+        </div>
+
+        <div class="impact-card">
+          <div class="impact-icon-wrapper impact-water">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+          <div class="impact-number count-up" data-target="4626000">0</div>
+          <div class="impact-label">Gallons Water Conserved</div>
+          <p class="impact-desc">Virtual water footprint saved across agriculture & logistics.</p>
+        </div>
+
+        <div class="impact-card">
+          <div class="impact-icon-wrapper impact-co2">
+            <i class="fa-solid fa-leaf"></i>
+          </div>
+          <div class="impact-number count-up" data-target="38550">0</div>
+          <div class="impact-label">Lbs CO2e Prevented</div>
+          <p class="impact-desc">Methane & landfill greenhouse emissions actively avoided.</p>
+        </div>
+
+        <div class="impact-card">
+          <div class="impact-icon-wrapper impact-community">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div class="impact-number count-up" data-target="1280">0</div>
+          <div class="impact-label">Community Members Fed</div>
+          <p class="impact-desc">Verified shelter residents, students, and local families.</p>
+        </div>
+      </div>
+    </section>
 
     <!-- AUTHENTICATION SECTION (Login & Signup) -->
     <section id="auth-section" class="auth-section container hidden">
-      <div class="auth-card">
-        <div class="auth-tabs">
-          <button class="auth-tab active" id="tab-login-btn">Login</button>
-          <button class="auth-tab" id="tab-signup-btn">Register</button>
+      <div class="auth-split-wrapper">
+        <div class="auth-brand-side">
+          <div class="auth-brand-content">
+            <div class="hero-badge"><i class="fa-solid fa-leaf"></i> Welcome to FoodShare</div>
+            <h2>Good food belongs on tables, not in landfills.</h2>
+            <p>Join thousands of restaurants, bakeries, markets, and conscious citizens building a zero-waste community.</p>
+            <div class="auth-brand-stats">
+              <div class="auth-stat">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>100% Free & Open Community Platform</span>
+              </div>
+              <div class="auth-stat">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Verified NGO Tax-Exempt Commendations</span>
+              </div>
+              <div class="auth-stat">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Instant 6-digit Secure Pickup Verification</span>
+              </div>
+            </div>
+            <div class="auth-brand-quote">
+              <i class="fa-solid fa-quote-left"></i>
+              <p>"FoodShare turned our end-of-day bakery surplus into 300 meals a month for our neighborhood shelter. Effortless and rewarding."</p>
+              <span>— Sarah M., Green Bakes</span>
+            </div>
+          </div>
         </div>
 
-        <!-- Login Form -->
-        <form id="login-form" class="auth-form">
-          <h2 class="form-title">Welcome Back</h2>
-          <p class="form-subtitle">Login to list food or check active reservations.</p>
-          <div class="form-group">
-            <label for="login-email">Email Address</label>
-            <div class="input-icon-wrapper">
-              <i class="fa-solid fa-envelope input-icon"></i>
-              <input type="email" id="login-email" required placeholder="name@example.com">
+        <div class="auth-form-side">
+          <div class="auth-card">
+            <div class="auth-tabs">
+              <button class="auth-tab active" id="tab-login-btn">Login</button>
+              <button class="auth-tab" id="tab-signup-btn">Register</button>
             </div>
-          </div>
-          <div class="form-group">
-            <label for="login-password">Password</label>
-            <div class="input-icon-wrapper">
-              <i class="fa-solid fa-lock input-icon"></i>
-              <input type="password" id="login-password" required placeholder="••••••••">
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-        </form>
 
-        <!-- Signup Form -->
-        <form id="signup-form" class="auth-form hidden">
-          <h2 class="form-title">Create Account</h2>
-          <p class="form-subtitle">Choose your role and help reduce food waste today.</p>
-          
-          <div class="form-group">
-            <label>Select User Role</label>
-            <div class="role-selector">
-              <input type="radio" name="signup-role" value="donor" id="role-donor" checked class="hidden-radio">
-              <label class="role-option active" id="role-donor-label" for="role-donor">
-                <i class="fa-solid fa-hand-holding-heart role-icon"></i>
-                <div class="role-info">
-                  <strong>Food Donor</strong>
-                  <span>Businesses or individuals with excess food</span>
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+              <h2 class="form-title">Welcome Back</h2>
+              <p class="form-subtitle">Login to list food or check active reservations.</p>
+              <div class="form-group">
+                <label for="login-email">Email Address</label>
+                <div class="input-icon-wrapper">
+                  <i class="fa-solid fa-envelope input-icon"></i>
+                  <input type="email" id="login-email" required placeholder="name@example.com">
                 </div>
-              </label>
-              
-              <input type="radio" name="signup-role" value="receiver" id="role-receiver" class="hidden-radio">
-              <label class="role-option" id="role-receiver-label" for="role-receiver">
-                <i class="fa-solid fa-utensils role-icon"></i>
-                <div class="role-info">
-                  <strong>Food Receiver</strong>
-                  <span>Individuals, shelters, or community kitchens</span>
+              </div>
+              <div class="form-group">
+                <label for="login-password">Password</label>
+                <div class="input-icon-wrapper">
+                  <i class="fa-solid fa-lock input-icon"></i>
+                  <input type="password" id="login-password" required placeholder="••••••••">
                 </div>
-              </label>
-            </div>
-          </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+            </form>
 
-          <div class="form-group">
-            <label for="signup-username">Name / Organization Name</label>
-            <div class="input-icon-wrapper">
-              <i class="fa-solid fa-user input-icon"></i>
-              <input type="text" id="signup-username" required placeholder="e.g. Green Bakery or Sarah Doe">
-            </div>
+            <!-- Signup Form -->
+            <form id="signup-form" class="auth-form hidden">
+              <h2 class="form-title">Create Account</h2>
+              <p class="form-subtitle">Choose your role and help reduce food waste today.</p>
+
+              <div class="form-group">
+                <label>Select User Role</label>
+                <div class="role-selector">
+                  <input type="radio" name="signup-role" value="donor" id="role-donor" checked class="hidden-radio">
+                  <label class="role-option active" id="role-donor-label" for="role-donor">
+                    <i class="fa-solid fa-hand-holding-heart role-icon"></i>
+                    <div class="role-info">
+                      <strong>Food Donor</strong>
+                      <span>Businesses or individuals with excess food</span>
+                    </div>
+                  </label>
+
+                  <input type="radio" name="signup-role" value="receiver" id="role-receiver" class="hidden-radio">
+                  <label class="role-option" id="role-receiver-label" for="role-receiver">
+                    <i class="fa-solid fa-utensils role-icon"></i>
+                    <div class="role-info">
+                      <strong>Food Receiver</strong>
+                      <span>Individuals, shelters, or community kitchens</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="signup-username">Name / Organization Name</label>
+                <div class="input-icon-wrapper">
+                  <i class="fa-solid fa-user input-icon"></i>
+                  <input type="text" id="signup-username" required placeholder="e.g. Green Bakery or Sarah Doe">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="signup-email">Email Address</label>
+                <div class="input-icon-wrapper">
+                  <i class="fa-solid fa-envelope input-icon"></i>
+                  <input type="email" id="signup-email" required placeholder="contact@example.com">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="signup-phone">Phone Number (Required for pickup coordination)</label>
+                <div class="input-icon-wrapper">
+                  <i class="fa-solid fa-phone input-icon"></i>
+                  <input type="tel" id="signup-phone" required placeholder="e.g. +1 555-0199">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="signup-password">Password</label>
+                <div class="input-icon-wrapper">
+                  <i class="fa-solid fa-lock input-icon"></i>
+                  <input type="password" id="signup-password" required placeholder="Minimum 6 characters">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+            </form>
           </div>
-          <div class="form-group">
-            <label for="signup-email">Email Address</label>
-            <div class="input-icon-wrapper">
-              <i class="fa-solid fa-envelope input-icon"></i>
-              <input type="email" id="signup-email" required placeholder="contact@example.com">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="signup-phone">Phone Number (Required for pickup coordination)</label>
-            <div class="input-icon-wrapper">
-              <i class="fa-solid fa-phone input-icon"></i>
-              <input type="tel" id="signup-phone" required placeholder="e.g. +1 555-0199">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="signup-password">Password</label>
-            <div class="input-icon-wrapper">
-              <i class="fa-solid fa-lock input-icon"></i>
-              <input type="password" id="signup-password" required placeholder="Minimum 6 characters">
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
-        </form>
+        </div>
       </div>
     </section>
 
@@ -313,7 +459,7 @@
               <label for="listing-title">Listing Title</label>
               <input type="text" id="listing-title" required placeholder="e.g. 5x Surplus Vegetable Paninis">
             </div>
-            
+
             <div class="form-group">
               <label for="listing-category">Food Category</label>
               <select id="listing-category" style="width: 100%; outline: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; background-color: var(--surface); color: var(--dark); transition: var(--transition);">
@@ -327,7 +473,7 @@
                 <option value="Other">Other</option>
               </select>
             </div>
-            
+
             <div class="form-row">
               <div class="form-group">
                 <label for="listing-quantity">Quantity</label>
@@ -472,7 +618,7 @@
     <section id="receiver-dashboard" class="receiver-dashboard container hidden">
       <h2 class="section-title">My Claims & Reservations</h2>
       <p class="section-subtitle">Present the reservation code to the donor during the pickup window.</p>
-      
+
       <div class="dashboard-grid" style="margin-top: 24px;">
         <!-- Left Column: Active Reservations -->
         <div class="receiver-reservations-grid" id="receiver-reservations-grid">
@@ -553,7 +699,7 @@
             <h3 class="profile-name">Admin Console</h3>
             <p class="profile-role">System Administrator</p>
           </div>
-          
+
           <div class="dashboard-card margin-top">
             <h2 class="card-title"><i class="fa-solid fa-chart-line icon-accent"></i> Platform Stats</h2>
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
@@ -602,10 +748,10 @@
           <div class="dashboard-card">
             <h2 class="card-title" id="admin-form-title"><i class="fa-solid fa-user-plus icon-accent"></i> Add New Profile</h2>
             <p class="card-subtitle" id="admin-form-subtitle">Create a new donor or receiver profile manually.</p>
-            
+
             <form id="admin-user-form" style="margin-top: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
               <input type="hidden" id="admin-user-id">
-              
+
               <div class="form-group" style="margin-bottom: 0;">
                 <label for="admin-user-username">Username / Organization</label>
                 <input type="text" id="admin-user-username" required placeholder="e.g. Bandra Bakery">
@@ -630,7 +776,7 @@
                 <label for="admin-user-password">Password</label>
                 <input type="password" id="admin-user-password" placeholder="••••••••" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px;">
               </div>
-              
+
               <div style="grid-column: span 2; display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" class="btn btn-secondary" id="btn-admin-cancel-edit" style="display: none;" onclick="cancelAdminUserEdit()">Cancel</button>
                 <button type="submit" class="btn btn-primary" id="btn-admin-submit-user">Save Profile</button>
@@ -642,7 +788,7 @@
           <div class="dashboard-card margin-top">
             <h2 class="card-title"><i class="fa-solid fa-users icon-accent"></i> Registered Profiles</h2>
             <p class="card-subtitle">Manage all donor and receiver credentials.</p>
-            
+
             <div style="overflow-x: auto; margin-top: 15px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
               <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
                 <thead>
@@ -663,6 +809,99 @@
         </div>
       </div>
     </section>
+
+    <!-- UI DEMO & DESIGN SYSTEM SHOWCASE SECTION -->
+    <section id="ui-demo-section" class="ui-demo-section container hidden">
+      <div class="section-header">
+        <div>
+          <div class="hero-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> Design System</div>
+          <h2 class="section-title">FoodShare Premium UI / UX Showcase</h2>
+          <p class="section-subtitle">Interactive playground of modern design tokens, notifications, micro-interactions, and skeleton states.</p>
+        </div>
+      </div>
+
+      <div class="demo-grid">
+        <!-- Toast & Notification Playground -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <i class="fa-solid fa-bell icon-accent"></i>
+            <h3>Interactive Floating Toast Notifications</h3>
+          </div>
+          <p>Trigger dynamic floating toast alerts with progress animations.</p>
+          <div class="demo-btn-group">
+            <button class="btn btn-primary btn-sm" id="demo-toast-success"><i class="fa-solid fa-circle-check"></i> Success Toast</button>
+            <button class="btn btn-secondary btn-sm" id="demo-toast-info"><i class="fa-solid fa-circle-info"></i> Info Toast</button>
+            <button class="btn btn-warning btn-sm" id="demo-toast-warning"><i class="fa-solid fa-triangle-exclamation"></i> Warning Toast</button>
+            <button class="btn btn-danger btn-sm" id="demo-toast-error"><i class="fa-solid fa-circle-xmark"></i> Error Toast</button>
+          </div>
+        </div>
+
+        <!-- Skeleton Loading State Toggle -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <i class="fa-solid fa-spinner icon-accent"></i>
+            <h3>Skeleton Shimmer Loading States</h3>
+          </div>
+          <p>Preview zero-layout-shift shimmer placeholders for network latency.</p>
+          <div class="demo-btn-group">
+            <button class="btn btn-secondary btn-sm" id="demo-toggle-skeleton"><i class="fa-solid fa-arrows-rotate"></i> Toggle Skeletons On/Off</button>
+          </div>
+          <div id="demo-skeleton-container" class="demo-preview-box">
+            <div class="skeleton-card">
+              <div class="skeleton-image shimmer"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-title shimmer"></div>
+                <div class="skeleton-text shimmer"></div>
+                <div class="skeleton-text shimmer" style="width: 60%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gamification & Achievement Badges -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <i class="fa-solid fa-trophy icon-accent"></i>
+            <h3>Gamification Badges & Rank System</h3>
+          </div>
+          <p>Multi-tier sustainability rewards driving donor & volunteer retention.</p>
+          <div class="badges-row" style="display: flex; gap: 12px; margin-top: 10px;">
+            <div class="badge-item active-badge">
+              <i class="fa-solid fa-seedling" style="color: #CD7F32; font-size: 1.5rem;"></i>
+              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Bronze</span>
+            </div>
+            <div class="badge-item active-badge">
+              <i class="fa-solid fa-medal" style="color: #94A3B8; font-size: 1.5rem;"></i>
+              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Silver</span>
+            </div>
+            <div class="badge-item active-badge">
+              <i class="fa-solid fa-award" style="color: #F59E0B; font-size: 1.5rem;"></i>
+              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Gold</span>
+            </div>
+            <div class="badge-item active-badge">
+              <i class="fa-solid fa-crown" style="color: #10B981; font-size: 1.5rem;"></i>
+              <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-top: 4px;">Hero</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color System Tokens -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <i class="fa-solid fa-palette icon-accent"></i>
+            <h3>Brand Palette & Design Tokens</h3>
+          </div>
+          <p>Sophisticated emerald and forest palette tuned for light and dark themes.</p>
+          <div class="swatches-grid">
+            <div class="swatch-item" style="background: #0F5132; color: #fff;"><span>Forest #0F5132</span></div>
+            <div class="swatch-item" style="background: #10B981; color: #fff;"><span>Emerald #10B981</span></div>
+            <div class="swatch-item" style="background: #F59E0B; color: #000;"><span>Amber #F59E0B</span></div>
+            <div class="swatch-item" style="background: #0F172A; color: #fff;"><span>Slate #0F172A</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- RATING & REVIEW DIALOG MODAL -->
@@ -707,7 +946,7 @@
       <p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">This certificate is proudly presented to</p>
       <h2 id="cert-donor-name" style="font-family: 'Outfit', sans-serif; color: var(--dark); font-size: 1.8rem; margin: 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; display: inline-block;">Taj Food Services</h2>
       <p style="font-size: 0.95rem; line-height: 1.6; color: var(--dark); margin: 20px 0;">
-        for outstanding commitment to environmental sustainability and community care. 
+        for outstanding commitment to environmental sustainability and community care.
         Through the **Food Share** initiative, they have actively prevented food waste and fed families in need.
       </p>
       <div class="calc-results" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 25px 0;">
@@ -770,22 +1009,71 @@
 
   <!-- Footer -->
   <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-brand">
-        <span class="logo-text"><i class="fa-solid fa-hand-holding-heart"></i> Food<span class="logo-accent">Share</span></span>
-        <p>Connecting surplus food with community hunger. Built for a sustainable future.</p>
+    <div class="footer-container footer-5col">
+      <div class="footer-col footer-col-brand">
+        <a href="#" class="logo" onclick="showSection('landing'); return false;">
+          <i class="fa-solid fa-hand-holding-heart logo-icon"></i>
+          <span class="logo-text">Food<span class="logo-accent">Share</span></span>
+        </a>
+        <p class="footer-tagline">"Good food deserves another table."</p>
+        <p class="footer-desc">Connecting surplus food with community hunger. Built with high performance and zero food waste in mind.</p>
+        <div class="footer-socials">
+          <a href="#" aria-label="Github"><i class="fa-brands fa-github"></i></a>
+          <a href="#" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+          <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+        </div>
       </div>
-      <div class="footer-links">
-        <h4>Explore</h4>
+
+      <div class="footer-col">
+        <h4>Platform</h4>
         <ul>
-          <li><a href="#" onclick="showSection('landing')">Home</a></li>
-          <li><a href="#" onclick="showSection('browse')">Browse Food</a></li>
-          <li><a href="#" onclick="showSection('auth')">Sign In</a></li>
+          <li><a href="#" onclick="showSection('landing'); return false;">Home</a></li>
+          <li><a href="#" onclick="showSection('browse'); return false;">Browse Food</a></li>
+          <li><a href="#how-it-works-section" onclick="showSection('landing'); document.getElementById('how-it-works-section')?.scrollIntoView({behavior:'smooth'}); return false;">How It Works</a></li>
+          <li><a href="#impact-section" onclick="showSection('landing'); document.getElementById('impact-section')?.scrollIntoView({behavior:'smooth'}); return false;">Impact Metrics</a></li>
+          <li><a href="#" onclick="showSection('ui-demo'); return false;">UI Showcase</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Participants</h4>
+        <ul>
+          <li><a href="#" onclick="showSection('auth'); switchToSignupTab('donor'); return false;">Become a Donor</a></li>
+          <li><a href="#" onclick="showSection('auth'); switchToSignupTab('receiver'); return false;">Claim as Receiver</a></li>
+          <li><a href="#" onclick="showSection('auth'); return false;">NGO Tax Verification</a></li>
+          <li><a href="#" onclick="showSection('auth'); return false;">CSR Certification</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Sustainability</h4>
+        <ul>
+          <li><a href="#impact-section" onclick="showSection('landing'); document.getElementById('impact-section')?.scrollIntoView({behavior:'smooth'}); return false;">Zero Waste Movement</a></li>
+          <li><a href="#impact-section" onclick="showSection('landing'); document.getElementById('impact-section')?.scrollIntoView({behavior:'smooth'}); return false;">CO2 Diversion Calculator</a></li>
+          <li><a href="#impact-section" onclick="showSection('landing'); document.getElementById('impact-section')?.scrollIntoView({behavior:'smooth'}); return false;">Water Conservation</a></li>
+          <li><a href="#" onclick="showSection('browse'); return false;">Local Kitchens</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Technology</h4>
+        <ul>
+          <li><a href="#" onclick="return false;">REST API Service</a></li>
+          <li><a href="#" onclick="return false;">Leaflet Geo Maps</a></li>
+          <li><a href="#" onclick="return false;">Vercel Serverless</a></li>
+          <li><a href="#" onclick="return false;">MongoDB Atlas</a></li>
         </ul>
       </div>
     </div>
+
     <div class="footer-bottom">
-      <p>&copy; 2026 Food Share. Project built using Vanilla Frontend + REST Backend.</p>
+      <div class="footer-bottom-container">
+        <p>&copy; 2026 Food Share Platform. Dedicated to community empowerment & zero waste.</p>
+        <div class="footer-badges">
+          <span class="footer-badge-pill"><i class="fa-solid fa-shield-halved"></i> Verified Secure</span>
+          <span class="footer-badge-pill"><i class="fa-solid fa-leaf"></i> 100% Eco-Friendly</span>
+        </div>
+      </div>
     </div>
   </footer>
 
@@ -825,5 +1113,7 @@
 
   <!-- Custom JavaScript -->
   <script src="js/app.js?v=2.3"></script>
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
 </body>
 </html>

@@ -46,7 +46,7 @@ function initSession() {
     state.token = token;
     state.currentUser = JSON.parse(userJson);
     updateNavUI();
-    
+
     // Proactively verify session validity with backend
     fetchWithAuth('/auth/me')
       .then(user => {
@@ -108,54 +108,75 @@ async function fetchWithAuth(endpoint, options = {}) {
 // --- UI ROUTING SYSTEM ---
 function showSection(sectionId) {
   // Hide all sections first
-  document.getElementById('landing-hero').classList.add('hidden');
-  document.getElementById('auth-section').classList.add('hidden');
-  document.getElementById('browse-section').classList.add('hidden');
-  document.getElementById('donor-section').classList.add('hidden');
-  document.getElementById('receiver-dashboard').classList.add('hidden');
-  document.getElementById('admin-section').classList.add('hidden');
+  const heroEl = document.getElementById('landing-hero');
+  const howWorksEl = document.getElementById('how-it-works-section');
+  const impactEl = document.getElementById('impact-section');
+  const authEl = document.getElementById('auth-section');
+  const browseEl = document.getElementById('browse-section');
+  const donorEl = document.getElementById('donor-section');
+  const receiverEl = document.getElementById('receiver-dashboard');
+  const adminEl = document.getElementById('admin-section');
+  const uiDemoEl = document.getElementById('ui-demo-section');
+
+  if (heroEl) heroEl.classList.add('hidden');
+  if (howWorksEl) howWorksEl.classList.add('hidden');
+  if (impactEl) impactEl.classList.add('hidden');
+  if (authEl) authEl.classList.add('hidden');
+  if (browseEl) browseEl.classList.add('hidden');
+  if (donorEl) donorEl.classList.add('hidden');
+  if (receiverEl) receiverEl.classList.add('hidden');
+  if (adminEl) adminEl.classList.add('hidden');
+  if (uiDemoEl) uiDemoEl.classList.add('hidden');
 
   // Deactivate all navbar links
   document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
 
   // Show target section & highlight active link
   if (sectionId === 'landing') {
-    document.getElementById('landing-hero').classList.remove('hidden');
-    document.getElementById('nav-home').classList.add('active');
+    if (heroEl) heroEl.classList.remove('hidden');
+    if (howWorksEl) howWorksEl.classList.remove('hidden');
+    if (impactEl) impactEl.classList.remove('hidden');
+    document.getElementById('nav-home')?.classList.add('active');
+    if (typeof setupScrollAnimations === 'function') setupScrollAnimations();
+    if (typeof animateCounters === 'function') animateCounters();
+  } else if (sectionId === 'ui-demo') {
+    if (uiDemoEl) uiDemoEl.classList.remove('hidden');
+    document.getElementById('nav-ui-demo')?.classList.add('active');
+    if (typeof initUiDemo === 'function') initUiDemo();
   } else if (sectionId === 'auth') {
-    document.getElementById('auth-section').classList.remove('hidden');
+    if (authEl) authEl.classList.remove('hidden');
   } else if (sectionId === 'browse') {
-    document.getElementById('browse-section').classList.remove('hidden');
-    document.getElementById('nav-browse').classList.add('active');
+    if (browseEl) browseEl.classList.remove('hidden');
+    document.getElementById('nav-browse')?.classList.add('active');
     loadListings();
   } else if (sectionId === 'donor') {
     if (!state.currentUser || state.currentUser.role !== 'donor') {
       showSection('auth');
       return;
     }
-    document.getElementById('donor-section').classList.remove('hidden');
-    document.getElementById('nav-donate').classList.add('active');
+    if (donorEl) donorEl.classList.remove('hidden');
+    document.getElementById('nav-donate')?.classList.add('active');
     loadDonorDashboard();
   } else if (sectionId === 'receiver') {
     if (!state.currentUser || state.currentUser.role !== 'receiver') {
       showSection('auth');
       return;
     }
-    document.getElementById('receiver-dashboard').classList.remove('hidden');
-    document.getElementById('nav-reservations').classList.add('active');
+    if (receiverEl) receiverEl.classList.remove('hidden');
+    document.getElementById('nav-reservations')?.classList.add('active');
     loadReceiverReservations();
   } else if (sectionId === 'admin') {
     if (!state.currentUser || state.currentUser.role !== 'admin') {
       showSection('auth');
       return;
     }
-    document.getElementById('admin-section').classList.remove('hidden');
-    document.getElementById('nav-admin').classList.add('active');
+    if (adminEl) adminEl.classList.remove('hidden');
+    document.getElementById('nav-admin')?.classList.add('active');
     loadAdminDashboard();
   }
 
   // Close mobile navigation drawer if open
-  document.getElementById('navbar').classList.remove('active');
+  document.getElementById('navbar')?.classList.remove('active');
 }
 
 function updateNavUI() {
@@ -169,7 +190,7 @@ function updateNavUI() {
     // Authenticated
     guestElems.forEach(el => el.classList.add('hidden'));
     authElems.forEach(el => el.classList.remove('hidden'));
-    
+
     const displaySpan = document.getElementById('user-display-name');
     if (state.currentUser.role === 'receiver' && state.currentUser.verification_doc === 'verified') {
       displaySpan.innerHTML = `${escapeHTML(state.currentUser.username)} <i class="fa-solid fa-circle-check" style="color: #4caf50; margin-left: 4px;" title="Verified NGO"></i>`;
@@ -209,7 +230,7 @@ function setupEventListeners() {
   document.getElementById('nav-donate').addEventListener('click', (e) => { e.preventDefault(); showSection('donor'); });
   document.getElementById('nav-reservations').addEventListener('click', (e) => { e.preventDefault(); showSection('receiver'); });
   document.getElementById('nav-admin').addEventListener('click', (e) => { e.preventDefault(); showSection('admin'); });
-  
+
   // Hero CTA Buttons
   document.getElementById('hero-btn-browse').addEventListener('click', () => showSection('browse'));
   document.getElementById('hero-btn-donate').addEventListener('click', () => {
@@ -282,7 +303,7 @@ function setupEventListeners() {
   if (closeCertBtn && certModal) {
     closeCertBtn.addEventListener('click', () => certModal.close());
   }
-  
+
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'btn-export-certificate') {
       openCertificateModal();
@@ -351,12 +372,12 @@ function setupEventListeners() {
     state.filters.status = 'available';
     state.filters.category = 'all';
     state.filters.tags.clear();
-    
+
     document.getElementById('filter-search').value = '';
     document.getElementById('filter-status').value = 'available';
     document.getElementById('filter-category').value = 'all';
     document.querySelectorAll('.tag-filter-btn').forEach(btn => btn.classList.remove('active'));
-    
+
     loadListings();
   });
 
@@ -448,7 +469,7 @@ async function handleLogin(e) {
       method: 'POST',
       body: JSON.stringify({ email, password })
     });
-    
+
     saveSession(res.token, res.user);
     e.target.reset();
 
@@ -482,10 +503,10 @@ async function handleSignup(e) {
       method: 'POST',
       body: JSON.stringify({ username, email, password, role, phone })
     });
-    
+
     showToast('Registration successful! Please login.', 'success');
     switchToLoginTab();
-    
+
     // Auto-fill login email for convenience
     document.getElementById('login-email').value = email;
   } catch (err) {
@@ -546,7 +567,7 @@ async function handleCreateListing(e) {
 
     showToast('Food listing posted successfully!', 'success');
     e.target.reset();
-    
+
     // Hide image preview on form reset
     const previewContainer = document.getElementById('image-preview-container');
     const previewImage = document.getElementById('image-preview');
@@ -554,7 +575,7 @@ async function handleCreateListing(e) {
       previewContainer.classList.add('hidden');
       previewImage.src = '';
     }
-    
+
     loadDonorDashboard();
   } catch (err) {
     showToast(err.message, 'error');
@@ -607,9 +628,9 @@ function renderListings(listings) {
   grid.innerHTML = listings.map(l => {
     const defaultImg = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
     const bgImg = l.image_url ? l.image_url : defaultImg;
-    
+
     // Format Tags
-    const tagsHtml = l.dietary_tags 
+    const tagsHtml = l.dietary_tags
       ? l.dietary_tags.split(',').map(t => {
           let cssClass = 'tag-nuts';
           if (t.toLowerCase() === 'vegan') cssClass = 'tag-vegan';
@@ -650,7 +671,7 @@ function renderListings(listings) {
             <i class="fa-solid fa-star"></i> <span>${l.donor_rating || 'New'}</span> <span style="color: var(--text-muted); font-weight: 400;">(${l.donor_rating_count || 0} reviews)</span>
           </p>
           <p class="listing-description">${escapeHTML(l.description || 'No description provided.')}</p>
-          
+
           <div class="listing-meta" style="display: flex; flex-direction: column; gap: 8px;">
             <div class="meta-item" style="display: flex; align-items: flex-start; gap: 6px;">
               <i class="fa-solid fa-location-dot" style="margin-top: 3px;"></i>
@@ -683,10 +704,10 @@ async function openListingDetail(listingId) {
 
   try {
     const listing = await fetchWithAuth(`/listings/${listingId}`);
-    
+
     // Check if the current user owns it or reserved it
     const isOwner = state.currentUser && state.currentUser.id === listing.donor_id;
-    
+
     const expiryDate = new Date(listing.expiry_time);
     const isExpired = expiryDate < new Date();
 
@@ -694,7 +715,7 @@ async function openListingDetail(listingId) {
     const endWindow = new Date(listing.pickup_end).toLocaleString();
 
     let actionBtnHtml = '';
-    
+
     if (!state.currentUser) {
       actionBtnHtml = `<button class="btn btn-primary btn-full" onclick="showSection('auth'); document.getElementById('listing-detail-modal').close();">Log In to Reserve Food</button>`;
     } else if (state.currentUser.role === 'receiver') {
@@ -732,7 +753,7 @@ async function openListingDetail(listingId) {
     const bgImg = listing.image_url ? listing.image_url : defaultImg;
 
     // Contact info display condition: Show donor phone only if authorized
-    const contactInfoHtml = state.currentUser 
+    const contactInfoHtml = state.currentUser
       ? `<div class="donor-contact-card">
           <h5><i class="fa-solid fa-address-book"></i> Donor Contact Details</h5>
           <p><strong>Name:</strong> ${escapeHTML(listing.donor_name)}</p>
@@ -748,7 +769,7 @@ async function openListingDetail(listingId) {
       <h4 class="modal-detail-title">${escapeHTML(listing.title)}</h4>
       <p class="modal-detail-desc" style="margin-bottom: 8px;"><strong>Category:</strong> <span style="font-weight: 700; color: var(--primary);">${escapeHTML(listing.food_category || 'Other')}</span></p>
       <p class="modal-detail-desc">${escapeHTML(listing.description || 'No detailed instructions provided.')}</p>
-      
+
       <div class="modal-detail-grid">
         <div class="modal-detail-item">
           <h5>Quantity</h5>
@@ -771,7 +792,7 @@ async function openListingDetail(listingId) {
           <p><i class="fa-solid fa-location-dot"></i> ${escapeHTML(listing.pickup_location)}</p>
         </div>
       </div>
-      
+
       ${contactInfoHtml}
       <div class="margin-top">
         ${actionBtnHtml}
@@ -786,7 +807,7 @@ async function openListingDetail(listingId) {
 async function loadDonorDashboard() {
   const listingsList = document.getElementById('donor-listings-list');
   const reservationsList = document.getElementById('donor-reservations-list');
-  
+
   listingsList.innerHTML = '<p class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Loading lists...</p>';
   reservationsList.innerHTML = '<p class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Loading pending orders...</p>';
 
@@ -862,7 +883,7 @@ async function deleteListing(listingId) {
     });
     showToast('Listing deleted successfully.', 'success');
     document.getElementById('listing-detail-modal').close();
-    
+
     if (state.currentUser.role === 'donor') loadDonorDashboard();
     else loadListings();
   } catch (err) {
@@ -878,7 +899,7 @@ async function reserveFood(listingId) {
     const res = await fetchWithAuth(`/listings/${listingId}/reserve`, {
       method: 'POST'
     });
-    
+
     document.getElementById('listing-detail-modal').close();
     showToast(`Food reserved! Your code is: ${res.reservationCode}`, 'success');
     showSection('receiver'); // Redirect to reservations dashboard
@@ -897,7 +918,7 @@ async function releaseReservation(listingId) {
     });
     showToast('Reservation successfully cancelled.', 'success');
     document.getElementById('listing-detail-modal').close();
-    
+
     if (state.currentUser.role === 'receiver') loadReceiverReservations();
     else loadDonorDashboard();
   } catch (err) {
@@ -918,7 +939,7 @@ async function loadReceiverReservations() {
         document.getElementById('user-xp-display').innerText = profile.xp_points;
         updateBadgesAndLevel(profile.xp_points);
       }
-      
+
       const statusDiv = document.getElementById('ngo-verification-status');
       if (profile && statusDiv) {
         const verifyForm = document.getElementById('ngo-verify-form');
@@ -938,7 +959,7 @@ async function loadReceiverReservations() {
     }
 
     const reservations = await fetchWithAuth('/reservations/my');
-    
+
     // Load leaderboard list
     try {
       const leaderboard = await fetchWithAuth('/users/leaderboard');
@@ -984,7 +1005,7 @@ async function loadReceiverReservations() {
     grid.innerHTML = reservations.map(r => {
       const isCompleted = r.status === 'completed';
       const isCancelled = r.status === 'cancelled';
-      
+
       let cardStyle = '';
       let footerHtml = '';
 
@@ -1005,7 +1026,7 @@ async function loadReceiverReservations() {
         `;
       } else {
         cardStyle = 'border-top: 4px solid var(--border); opacity: 0.8;';
-        
+
         let ratingBtnHtml = '';
         if (isCompleted) {
           if (r.rating) {
@@ -1017,7 +1038,7 @@ async function loadReceiverReservations() {
 
         footerHtml = `
           <div style="text-align:center; padding: 20px 0 10px; font-weight:700; color: ${isCompleted ? 'var(--success)' : 'var(--error)'}">
-            <i class="fa-solid ${isCompleted ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> 
+            <i class="fa-solid ${isCompleted ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
             Reservation ${r.status}
           </div>
           ${ratingBtnHtml}
@@ -1060,7 +1081,7 @@ async function handleConfirmClaimCode(e) {
 
     showToast('Pickup confirmed! Food claimed successfully.', 'success');
     document.getElementById('claim-verification-modal').close();
-    
+
     if (state.currentUser.role === 'donor') loadDonorDashboard();
     else showSection('browse');
   } catch (err) {
@@ -1070,30 +1091,50 @@ async function handleConfirmClaimCode(e) {
 
 // --- NOTIFICATION / TOAST SYSTEM ---
 function showToast(message, type = 'info') {
+  // 1. Maintain top notification bar if present
   const bar = document.getElementById('notification-bar');
   const text = document.getElementById('notification-text');
+  if (bar && text) {
+    bar.className = 'notification-bar';
+    if (type === 'success') bar.classList.add('success');
+    if (type === 'error') bar.classList.add('error');
+    if (type === 'warning') bar.classList.add('warning');
+    text.textContent = message;
+    bar.style.display = 'flex';
+  }
 
-  bar.className = 'notification-bar'; // reset classes
-  if (type === 'success') bar.classList.add('success');
-  if (type === 'error') bar.classList.add('error');
-  if (type === 'warning') bar.classList.add('warning');
+  // 2. Modern floating toast pill
+  const container = document.getElementById('toast-container');
+  if (container) {
+    const toast = document.createElement('div');
+    toast.className = `toast-pill toast-${type}`;
 
-  text.textContent = message;
-  bar.style.display = 'flex';
+    let iconClass = 'fa-circle-info';
+    if (type === 'success') iconClass = 'fa-circle-check';
+    if (type === 'error') iconClass = 'fa-circle-xmark';
+    if (type === 'warning') iconClass = 'fa-triangle-exclamation';
 
-  // Automatically hide standard notifications after 6 seconds
-  if (type !== 'error') {
-    clearTimeout(window.toastTimeout);
-    window.toastTimeout = setTimeout(() => {
-      bar.style.display = 'none';
-    }, 6000);
+    toast.innerHTML = `
+      <i class="fa-solid ${iconClass} toast-icon"></i>
+      <span class="toast-message">${escapeHTML(message)}</span>
+      <div class="toast-progress"></div>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4800);
   }
 }
 
 // --- SECURITY UTILITY ---
 function escapeHTML(str) {
   if (!str) return '';
-  return str.replace(/[&<>'"]/g, 
+  return str.replace(/[&<>'"]/g,
     tag => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -1389,7 +1430,7 @@ function setupExtraFeatures() {
     const updateCalculator = () => {
       const meals = parseInt(calcSlider.value);
       calcMealsVal.textContent = meals;
-      
+
       const waterSaved = meals * 300;
       const co2Saved = meals * 2.5;
 
@@ -1444,7 +1485,7 @@ function updateMapMarkers(listings) {
         <button class="btn btn-primary btn-sm" onclick="openListingDetail('${l.id}')" style="padding: 4px; font-size:0.65rem; width:100%; border-radius: var(--radius-sm);">View Details</button>
       </div>
     `;
-    
+
     marker.bindPopup(popupContent);
     marker.addTo(markerLayerGroup);
     coordinates.push([lat, lng]);
@@ -1471,7 +1512,7 @@ function renderCsrChart(monthlyData) {
     d.setMonth(d.getMonth() - i);
     const mCode = String(d.getMonth() + 1).padStart(2, '0');
     labels.push(monthsName[d.getMonth()]);
-    
+
     const record = monthlyData.find(r => r.month === mCode);
     dataValues.push(record ? record.count : 0);
   }
@@ -1544,7 +1585,7 @@ async function handleNgoVerifySubmit(e) {
   e.preventDefault();
   const fileInput = document.getElementById('ngo-doc-file');
   const statusDiv = document.getElementById('ngo-verification-status');
-  
+
   if (!fileInput || fileInput.files.length === 0) return;
 
   statusDiv.innerText = "Submitting documentation...";
@@ -1799,7 +1840,7 @@ function showDirectionsToPickup(destLat, destLng) {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition((position) => {
       const { latitude, longitude } = position.coords;
-      
+
       routingControlInstance = L.Routing.control({
         waypoints: [
           L.latLng(latitude, longitude),
@@ -1864,7 +1905,7 @@ async function fetchChatMessages(listingId) {
         const isMe = m.sender_id === currentUserId;
         const alignStyle = isMe ? 'align-self: flex-end; background-color: var(--primary-light);' : 'align-self: flex-start; background-color: var(--border);';
         const nameColor = isMe ? 'var(--primary)' : 'var(--dark)';
-        
+
         return `
           <div style="max-width: 80%; padding: 8px 12px; border-radius: var(--radius-sm); margin: 2px 0; ${alignStyle}">
             <strong style="font-size: 0.65rem; display: block; color: ${nameColor};">${escapeHTML(m.sender_name)}</strong>
@@ -1909,7 +1950,7 @@ let adminListingsChartInstance = null;
 async function loadAdminDashboard() {
   const usersTableBody = document.getElementById('admin-users-table-body');
   const ngoVerifyList = document.getElementById('admin-pending-verification-list');
-  
+
   if (usersTableBody) usersTableBody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Retrieving users...</td></tr>';
   if (ngoVerifyList) ngoVerifyList.innerHTML = '<p class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Checking documents...</p>';
 
@@ -1925,7 +1966,7 @@ async function loadAdminDashboard() {
 
     // 2. Fetch users list
     const users = await fetchWithAuth('/admin/users');
-    
+
     if (users.length === 0) {
       usersTableBody.innerHTML = '<tr><td colspan="5" class="empty-state">No registered accounts in system.</td></tr>';
     } else {
@@ -2087,7 +2128,7 @@ function viewVerificationDoc(docData) {
 
 async function handleAdminUserSubmit(e) {
   e.preventDefault();
-  
+
   const userId = document.getElementById('admin-user-id').value;
   const username = document.getElementById('admin-user-username').value;
   const email = document.getElementById('admin-user-email').value;
@@ -2134,7 +2175,7 @@ async function editUser(userId) {
     document.getElementById('admin-user-email').value = u.email;
     document.getElementById('admin-user-phone').value = u.phone || '';
     document.getElementById('admin-user-role').value = u.role;
-    
+
     // Hide password field for edits to prevent accidental rewrites
     document.getElementById('admin-password-group').style.display = 'none';
     document.getElementById('admin-user-password').required = false;
@@ -2142,7 +2183,7 @@ async function editUser(userId) {
     document.getElementById('admin-form-title').innerHTML = '<i class="fa-solid fa-user-pen icon-accent"></i> Edit Profile';
     document.getElementById('admin-form-subtitle').innerText = 'Modify details of the selected profile.';
     document.getElementById('btn-admin-cancel-edit').style.display = 'inline-block';
-    
+
     // Scroll form into view
     document.getElementById('admin-user-form').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
@@ -2180,10 +2221,10 @@ async function verifyNgoUser(userId, approve) {
 function cancelAdminUserEdit() {
   document.getElementById('admin-user-id').value = '';
   document.getElementById('admin-user-form').reset();
-  
+
   // Restore password field
   document.getElementById('admin-password-group').style.display = 'block';
-  
+
   document.getElementById('admin-form-title').innerHTML = '<i class="fa-solid fa-user-plus icon-accent"></i> Add New Profile';
   document.getElementById('admin-form-subtitle').innerText = 'Create a new donor or receiver profile manually.';
   document.getElementById('btn-admin-cancel-edit').style.display = 'none';
@@ -2194,3 +2235,124 @@ window.editUser = editUser;
 window.deleteUser = deleteUser;
 window.verifyNgoUser = verifyNgoUser;
 window.viewVerificationDoc = viewVerificationDoc;
+
+// --- MODERN SCROLL ANIMATIONS & COUNTERS ---
+function setupScrollAnimations() {
+  const elements = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .scale-in');
+  if (!('IntersectionObserver' in window)) {
+    elements.forEach(el => el.classList.add('active-revealed'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active-revealed');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  elements.forEach(el => observer.observe(el));
+}
+
+function animateCounters() {
+  const counters = document.querySelectorAll('.count-up');
+  counters.forEach(counter => {
+    const target = +counter.getAttribute('data-target') || 0;
+    const duration = 1600;
+    const start = 0;
+    const startTime = performance.now();
+
+    function update(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = Math.floor(start + (target - start) * ease);
+      counter.textContent = current.toLocaleString();
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        counter.textContent = target.toLocaleString();
+      }
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+function initUiDemo() {
+  const btnSuccess = document.getElementById('demo-toast-success');
+  const btnInfo = document.getElementById('demo-toast-info');
+  const btnWarning = document.getElementById('demo-toast-warning');
+  const btnError = document.getElementById('demo-toast-error');
+  const btnToggleSkeleton = document.getElementById('demo-toggle-skeleton');
+
+  if (btnSuccess) btnSuccess.onclick = () => showToast('Food listing reserved successfully! Code: FH982A', 'success');
+  if (btnInfo) btnInfo.onclick = () => showToast('Turn-by-turn route loaded to pickup spot.', 'info');
+  if (btnWarning) btnWarning.onclick = () => showToast('Listing expires in less than 30 minutes!', 'warning');
+  if (btnError) btnError.onclick = () => showToast('Invalid reservation code. Please try again.', 'error');
+
+  if (btnToggleSkeleton) {
+    btnToggleSkeleton.onclick = () => {
+      const container = document.getElementById('demo-skeleton-container');
+      if (container.dataset.state === 'loaded') {
+        container.dataset.state = 'skeleton';
+        container.innerHTML = `
+          <div class="skeleton-card">
+            <div class="skeleton-image shimmer"></div>
+            <div class="skeleton-body">
+              <div class="skeleton-title shimmer"></div>
+              <div class="skeleton-text shimmer"></div>
+              <div class="skeleton-text shimmer" style="width: 60%"></div>
+            </div>
+          </div>`;
+      } else {
+        container.dataset.state = 'loaded';
+        container.innerHTML = `
+          <div class="food-card" style="border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface);">
+            <div style="height: 160px; background: linear-gradient(135deg, #0F5132, #10B981); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 2rem;">
+              <i class="fa-solid fa-bread-slice"></i>
+            </div>
+            <div style="padding: 16px;">
+              <span class="status-tag status-available" style="font-size: 10px;">Available</span>
+              <h4 style="font-size: 1.1rem; margin: 8px 0 4px; color: var(--dark);">Artisan Sourdough Loaves</h4>
+              <p style="font-size: 0.82rem; color: var(--text-muted);"><i class="fa-solid fa-location-dot"></i> Baker's Oven &bull; 6 Loaves</p>
+            </div>
+          </div>`;
+      }
+    };
+  }
+}
+
+// Global hookups
+window.setupScrollAnimations = setupScrollAnimations;
+window.animateCounters = animateCounters;
+window.initUiDemo = initUiDemo;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const navDemo = document.getElementById('nav-ui-demo');
+  if (navDemo) {
+    navDemo.addEventListener('click', (e) => {
+      e.preventDefault();
+      showSection('ui-demo');
+    });
+  }
+  const navHowItWorks = document.getElementById('nav-how-it-works');
+  if (navHowItWorks) {
+    navHowItWorks.addEventListener('click', (e) => {
+      e.preventDefault();
+      showSection('landing');
+      document.getElementById('how-it-works-section')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+  const navImpact = document.getElementById('nav-impact');
+  if (navImpact) {
+    navImpact.addEventListener('click', (e) => {
+      e.preventDefault();
+      showSection('landing');
+      document.getElementById('impact-section')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+  setupScrollAnimations();
+});
