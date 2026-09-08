@@ -1,34 +1,30 @@
 {
   "version": 2,
   "functions": {
-    "api/[[...path]].js": {
+    "api/index.js": {
       "maxDuration": 10
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/[[...path]].js"
+      "source": "/api/(.*)",
+      "destination": "/api"
     },
     {
-      "src": "/css/(.*)",
-      "dest": "/frontend/public/css/$1"
+      "source": "/css/(.*)",
+      "destination": "/frontend/public/css/$1"
     },
     {
-      "src": "/js/(.*)",
-      "dest": "/frontend/public/js/$1"
+      "source": "/js/(.*)",
+      "destination": "/frontend/public/js/$1"
     },
     {
-      "src": "/uploads/(.*)",
-      "dest": "/frontend/public/uploads/$1"
+      "source": "/uploads/(.*)",
+      "destination": "/frontend/public/uploads/$1"
     },
     {
-      "src": "/",
-      "dest": "/frontend/public/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/public/index.html"
+      "source": "/(.*)",
+      "destination": "/frontend/public/index.html"
     }
   ]
 }
