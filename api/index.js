@@ -1,4 +1,4 @@
-﻿const { createApp } = require('../backend/app');
+const { createApp } = require('../backend/createApp');
 
 const app = createApp();
 
