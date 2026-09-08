@@ -1299,6 +1299,14 @@ function attachLocationAutocomplete(inputId, dropdownId, onSelectCallback) {
 // Simple fallback router based on hash links
 function routeByUrl() {
   const hash = window.location.hash;
+  const path = window.location.pathname;
+  if (path === '/ui-demo' || hash === '#ui-demo') {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', '/');
+    }
+    showSection('landing');
+    return;
+  }
   if (hash === '#browse') showSection('browse');
   else if (hash === '#donate') showSection('donor');
   else if (hash === '#reservations') showSection('receiver');
